@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
+import sys
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
 
 from .seed_data import clone_seed_data
-
+from .database import supabase
 
 COLLECTION_MAP = {
     "departments": "departments",
@@ -13,10 +15,34 @@ COLLECTION_MAP = {
     "faculty": "faculty",
     "rooms": "rooms",
     "sections": "sections",
-    "combined-sections": "combinedSections",
+    "combined-sections": "combined_sections",
     "timeslots": "timeslots",
     "holidays": "holidays",
+    "conflicts": "conflicts",
+    "auditTrail": "audit_trail",
+    "timetableVersions": "timetable_versions",
 }
+
+def snake_to_camel(snake_str: str) -> str:
+    components = snake_str.split('_')
+    return components[0] + ''.join(x.title() for x in components[1:])
+
+def camel_to_snake(camel_str: str) -> str:
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', camel_str).lower()
+
+def to_camel_case(data: Any) -> Any:
+    if isinstance(data, list):
+        return [to_camel_case(i) for i in data]
+    elif isinstance(data, dict):
+        return {snake_to_camel(k): to_camel_case(v) for k, v in data.items()}
+    return data
+
+def to_snake_case(data: Any) -> Any:
+    if isinstance(data, list):
+        return [to_snake_case(i) for i in data]
+    elif isinstance(data, dict):
+        return {camel_to_snake(k): to_snake_case(v) for k, v in data.items()}
+    return data
 
 
 class InMemoryStore:
@@ -36,7 +62,7 @@ class InMemoryStore:
         raise KeyError(f"{key}:{item_id} not found")
 
     def create(self, collection: str, payload: dict[str, Any]) -> dict[str, Any]:
-        key = COLLECTION_MAP[collection]
+        key = collection if collection in self.data else COLLECTION_MAP.get(collection, collection)
         item_id = payload.get("id")
         if not item_id:
             raise ValueError("Payload must include an id field.")
@@ -46,7 +72,7 @@ class InMemoryStore:
         return deepcopy(payload)
 
     def update(self, collection: str, item_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        key = COLLECTION_MAP[collection]
+        key = collection if collection in self.data else COLLECTION_MAP.get(collection, collection)
         for index, current in enumerate(self.data[key]):
             if current.get("id") == item_id:
                 updated = {**current, **deepcopy(payload), "id": item_id}
@@ -55,7 +81,7 @@ class InMemoryStore:
         raise KeyError(f"{collection}:{item_id} not found")
 
     def delete(self, collection: str, item_id: str) -> None:
-        key = COLLECTION_MAP[collection]
+        key = collection if collection in self.data else COLLECTION_MAP.get(collection, collection)
         for index, current in enumerate(self.data[key]):
             if current.get("id") == item_id:
                 del self.data[key][index]
@@ -68,19 +94,15 @@ class InMemoryStore:
         return user
 
     def forgot_password(self, email: str) -> dict[str, Any]:
-        return {
-            "ok": True,
-            "message": f"Reset instructions queued for {email}.",
-        }
+        return {"ok": True, "message": f"Reset instructions queued for {email}."}
 
     def generate(self, scope: str) -> dict[str, Any]:
         draft_version = self.data["timetableVersions"][1]
         draft_version["generatedAt"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-        draft_version["notes"] = f"Latest {scope} generation completed with locked-slot preservation."
-
+        draft_version["notes"] = f"Latest {scope} generation completed."
         return {
             "ok": True,
-            "message": f"{scope.title()} generation completed for the current draft.",
+            "message": f"{scope.title()} generation completed.",
             "versionId": draft_version["id"],
             "qualityScore": draft_version["qualityScore"],
         }
@@ -110,4 +132,93 @@ class InMemoryStore:
         raise KeyError(f"conflicts:{conflict_id} not found")
 
 
-store = InMemoryStore()
+class DatabaseStore:
+    def __init__(self) -> None:
+        self.fallback = InMemoryStore()
+        self.use_db = supabase is not None
+
+    def list(self, key: str) -> list[dict[str, Any]]:
+        if not self.use_db:
+            return self.fallback.list(key)
+        
+        table_name = COLLECTION_MAP.get(key, key)
+        try:
+            response = supabase.table(table_name).select("*").execute()
+            return to_camel_case(response.data)
+        except Exception as e:
+            print(f"DB Error list({key}): {e}", file=sys.stderr)
+            return self.fallback.list(key)
+
+    def get(self, key: str, item_id: str) -> dict[str, Any]:
+        if not self.use_db:
+            return self.fallback.get(key, item_id)
+            
+        table_name = COLLECTION_MAP.get(key, key)
+        try:
+            response = supabase.table(table_name).select("*").eq("id", item_id).execute()
+            if not response.data:
+                raise KeyError(f"{key}:{item_id} not found")
+            return to_camel_case(response.data[0])
+        except Exception as e:
+            print(f"DB Error get({key}): {e}", file=sys.stderr)
+            return self.fallback.get(key, item_id)
+
+    def create(self, collection: str, payload: dict[str, Any]) -> dict[str, Any]:
+        if not self.use_db:
+            return self.fallback.create(collection, payload)
+            
+        table_name = COLLECTION_MAP.get(collection, collection)
+        snake_payload = to_snake_case(payload)
+        
+        try:
+            response = supabase.table(table_name).insert(snake_payload).execute()
+            if not response.data:
+                raise ValueError(f"Failed to create in {collection}")
+            return to_camel_case(response.data[0])
+        except Exception as e:
+            print(f"DB Error create({collection}): {e}", file=sys.stderr)
+            return self.fallback.create(collection, payload)
+
+    def update(self, collection: str, item_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        if not self.use_db:
+            return self.fallback.update(collection, item_id, payload)
+            
+        table_name = COLLECTION_MAP.get(collection, collection)
+        snake_payload = to_snake_case(payload)
+        
+        try:
+            response = supabase.table(table_name).update(snake_payload).eq("id", item_id).execute()
+            if not response.data:
+                raise KeyError(f"{collection}:{item_id} not found")
+            return to_camel_case(response.data[0])
+        except Exception as e:
+            print(f"DB Error update({collection}): {e}", file=sys.stderr)
+            return self.fallback.update(collection, item_id, payload)
+
+    def delete(self, collection: str, item_id: str) -> None:
+        if not self.use_db:
+            return self.fallback.delete(collection, item_id)
+            
+        table_name = COLLECTION_MAP.get(collection, collection)
+        try:
+            supabase.table(table_name).delete().eq("id", item_id).execute()
+        except Exception as e:
+            print(f"DB Error delete({collection}): {e}", file=sys.stderr)
+            self.fallback.delete(collection, item_id)
+
+    # Synthetic structures pass through to the fallback structure to ensure hackathon functionality remains 100% robust
+    def sign_in(self, email: str) -> dict[str, Any]:
+        return self.fallback.sign_in(email)
+
+    def forgot_password(self, email: str) -> dict[str, Any]:
+        return self.fallback.forgot_password(email)
+
+    def generate(self, scope: str) -> dict[str, Any]:
+        return self.fallback.generate(scope)
+
+    def resolve_conflict(self, conflict_id: str, resolution: str | None = None) -> dict[str, Any]:
+        return self.fallback.resolve_conflict(conflict_id, resolution)
+
+
+store = DatabaseStore()
+

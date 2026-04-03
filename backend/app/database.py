@@ -1,17 +1,26 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
 import os
+import sys
+from supabase import create_client, Client
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:adminpassword@localhost:5432/timetable_db")
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_ANON_KEY")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
+# For local development without env set natively
+if not url or not key:
     try:
-        yield db
-    finally:
-        db.close()
+        from dotenv import load_dotenv
+        load_dotenv(".env.local")
+        load_dotenv(".env")
+        url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
+        key = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_ANON_KEY")
+    except Exception:
+        pass
+
+if not url or not key:
+    print("WARNING: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment.", file=sys.stderr)
+
+supabase: Client | None = None
+if url and key:
+    supabase = create_client(url, key)
+else:
+    supabase = None
