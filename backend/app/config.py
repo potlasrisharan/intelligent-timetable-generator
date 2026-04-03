@@ -14,7 +14,7 @@ class Settings:
     app_version: str = "0.1.0"
     api_prefix: str = "/api/v1"
     host: str = os.getenv("BACKEND_HOST", "127.0.0.1")
-    port: int = int(os.getenv("BACKEND_PORT", "8000"))
+    port: int = int(os.getenv("PORT", os.getenv("BACKEND_PORT", "8000")))
     cors_origins: tuple[str, ...] = tuple(
         _split_csv(
             os.getenv(
