@@ -49,7 +49,7 @@ export function DashboardRenderer({
         </div>
         <Card className="glass-panel section-ring rounded-[1.5rem] mt-6">
           <CardHeader>
-            <CardTitle className="text-xl text-white">Today's Schedule: CSE A (AIML A)</CardTitle>
+            <CardTitle className="text-xl text-white">Today&apos;s Schedule: CSE A (AIML A)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
