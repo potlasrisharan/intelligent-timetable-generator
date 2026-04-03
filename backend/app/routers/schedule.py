@@ -19,22 +19,22 @@ router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 @router.get("/entries", response_model=list[TimetableEntry])
 def get_entries() -> list[TimetableEntry]:
-    return [TimetableEntry.model_validate(item) for item in store.data["editorEntries"]]
+    return [TimetableEntry.model_validate(item) for item in store.list("editorEntries")]
 
 
 @router.get("/locked-slots", response_model=list[LockedSlot])
 def get_locked_slots() -> list[LockedSlot]:
-    return [LockedSlot.model_validate(item) for item in store.data["lockedSlots"]]
+    return [LockedSlot.model_validate(item) for item in store.list("lockedSlots")]
 
 
 @router.get("/conflicts", response_model=list[Conflict])
 def get_conflicts() -> list[Conflict]:
-    return [Conflict.model_validate(item) for item in store.data["conflicts"]]
+    return [Conflict.model_validate(item) for item in store.list("conflicts")]
 
 
 @router.get("/versions", response_model=list[TimetableVersion])
 def get_versions() -> list[TimetableVersion]:
-    return [TimetableVersion.model_validate(item) for item in store.data["timetableVersions"]]
+    return [TimetableVersion.model_validate(item) for item in store.list("timetableVersions")]
 
 
 @router.post("/generate", response_model=dict)

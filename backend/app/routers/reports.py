@@ -10,14 +10,14 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/summary", response_model=ReportSummary)
 def get_summary() -> ReportSummary:
-    return ReportSummary.model_validate(store.data["reportSummary"])
+    return ReportSummary.model_validate(store.get_report_summary())
 
 
 @router.get("/history", response_model=list[TimetableVersion])
 def get_history() -> list[TimetableVersion]:
-    return [TimetableVersion.model_validate(item) for item in store.data["timetableVersions"]]
+    return [TimetableVersion.model_validate(item) for item in store.list("timetableVersions")]
 
 
 @router.get("/audit-trail", response_model=list[AuditEvent])
 def get_audit_trail() -> list[AuditEvent]:
-    return [AuditEvent.model_validate(item) for item in store.data["auditTrail"]]
+    return [AuditEvent.model_validate(item) for item in store.list("auditTrail")]

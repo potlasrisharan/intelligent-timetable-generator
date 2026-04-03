@@ -16,14 +16,18 @@ COLLECTION_MAP = {
     "rooms": "rooms",
     "sections": "sections",
     "combined-sections": "combined_sections",
+    "combinedSections": "combined_sections",
     "timeslots": "timeslots",
     "holidays": "holidays",
     "conflicts": "conflicts",
     "auditTrail": "audit_trail",
     "timetableVersions": "timetable_versions",
+    "editorEntries": "timetable_entries",
+    "lockedSlots": "locked_slots",
 }
 
 def snake_to_camel(snake_str: str) -> str:
+    if not snake_str: return ""
     components = snake_str.split('_')
     return components[0] + ''.join(x.title() for x in components[1:])
 
@@ -53,10 +57,10 @@ class InMemoryStore:
         self.data = clone_seed_data()
 
     def list(self, key: str) -> list[dict[str, Any]]:
-        return deepcopy(self.data[key])
+        return deepcopy(self.data.get(key, []))
 
     def get(self, key: str, item_id: str) -> dict[str, Any]:
-        for item in self.data[key]:
+        for item in self.data.get(key, []):
             if item.get("id") == item_id:
                 return deepcopy(item)
         raise KeyError(f"{key}:{item_id} not found")
@@ -66,14 +70,15 @@ class InMemoryStore:
         item_id = payload.get("id")
         if not item_id:
             raise ValueError("Payload must include an id field.")
-        if any(existing.get("id") == item_id for existing in self.data[key]):
+        if any(existing.get("id") == item_id for existing in self.data.get(key, [])):
             raise ValueError(f"{collection} item '{item_id}' already exists.")
+        if key not in self.data: self.data[key] = []
         self.data[key].append(deepcopy(payload))
         return deepcopy(payload)
 
     def update(self, collection: str, item_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         key = collection if collection in self.data else COLLECTION_MAP.get(collection, collection)
-        for index, current in enumerate(self.data[key]):
+        for index, current in enumerate(self.data.get(key, [])):
             if current.get("id") == item_id:
                 updated = {**current, **deepcopy(payload), "id": item_id}
                 self.data[key][index] = updated
@@ -82,7 +87,7 @@ class InMemoryStore:
 
     def delete(self, collection: str, item_id: str) -> None:
         key = collection if collection in self.data else COLLECTION_MAP.get(collection, collection)
-        for index, current in enumerate(self.data[key]):
+        for index, current in enumerate(self.data.get(key, [])):
             if current.get("id") == item_id:
                 del self.data[key][index]
                 return
@@ -138,10 +143,10 @@ class DatabaseStore:
         self.use_db = supabase is not None
 
     def list(self, key: str) -> list[dict[str, Any]]:
+        table_name = COLLECTION_MAP.get(key, key)
         if not self.use_db:
             return self.fallback.list(key)
         
-        table_name = COLLECTION_MAP.get(key, key)
         try:
             response = supabase.table(table_name).select("*").execute()
             return to_camel_case(response.data)
@@ -150,10 +155,10 @@ class DatabaseStore:
             return self.fallback.list(key)
 
     def get(self, key: str, item_id: str) -> dict[str, Any]:
+        table_name = COLLECTION_MAP.get(key, key)
         if not self.use_db:
             return self.fallback.get(key, item_id)
             
-        table_name = COLLECTION_MAP.get(key, key)
         try:
             response = supabase.table(table_name).select("*").eq("id", item_id).execute()
             if not response.data:
@@ -164,12 +169,11 @@ class DatabaseStore:
             return self.fallback.get(key, item_id)
 
     def create(self, collection: str, payload: dict[str, Any]) -> dict[str, Any]:
+        table_name = COLLECTION_MAP.get(collection, collection)
         if not self.use_db:
             return self.fallback.create(collection, payload)
             
-        table_name = COLLECTION_MAP.get(collection, collection)
         snake_payload = to_snake_case(payload)
-        
         try:
             response = supabase.table(table_name).insert(snake_payload).execute()
             if not response.data:
@@ -180,12 +184,11 @@ class DatabaseStore:
             return self.fallback.create(collection, payload)
 
     def update(self, collection: str, item_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        table_name = COLLECTION_MAP.get(collection, collection)
         if not self.use_db:
             return self.fallback.update(collection, item_id, payload)
             
-        table_name = COLLECTION_MAP.get(collection, collection)
         snake_payload = to_snake_case(payload)
-        
         try:
             response = supabase.table(table_name).update(snake_payload).eq("id", item_id).execute()
             if not response.data:
@@ -196,17 +199,47 @@ class DatabaseStore:
             return self.fallback.update(collection, item_id, payload)
 
     def delete(self, collection: str, item_id: str) -> None:
+        table_name = COLLECTION_MAP.get(collection, collection)
         if not self.use_db:
             return self.fallback.delete(collection, item_id)
             
-        table_name = COLLECTION_MAP.get(collection, collection)
         try:
             supabase.table(table_name).delete().eq("id", item_id).execute()
         except Exception as e:
             print(f"DB Error delete({collection}): {e}", file=sys.stderr)
             self.fallback.delete(collection, item_id)
 
-    # Synthetic structures pass through to the fallback structure to ensure hackathon functionality remains 100% robust
+    def get_dashboard_metrics(self) -> dict[str, Any]:
+        # Aggregate real data from tables, mixing with fallback for placeholders
+        metrics = deepcopy(self.fallback.data["dashboardMetrics"])
+        
+        if not self.use_db:
+            return metrics
+            
+        try:
+            # Update values based on actual DB counts
+            conflicts = self.list("conflicts")
+            metrics["unresolvedConflicts"] = sum(1 for c in conflicts if c.get("status") == "open")
+            
+            audit = self.list("auditTrail")
+            metrics["recentActions"] = audit[:4]
+            
+            versions = self.list("timetableVersions")
+            active = next((v for v in versions if v.get("status") == "ACTIVE"), metrics["activeVersion"])
+            draft = next((v for v in versions if v.get("status") == "DRAFT"), metrics["draftVersion"])
+            metrics["activeVersion"] = active
+            metrics["draftVersion"] = draft
+            
+            return metrics
+        except Exception as e:
+            print(f"DB Error get_dashboard_metrics: {e}", file=sys.stderr)
+            return metrics
+
+    def get_report_summary(self) -> dict[str, Any]:
+        # Simple exposure of the reportSummary object with live versions if possible
+        summary = deepcopy(self.fallback.data["reportSummary"])
+        return summary
+
     def sign_in(self, email: str) -> dict[str, Any]:
         return self.fallback.sign_in(email)
 
@@ -217,6 +250,13 @@ class DatabaseStore:
         return self.fallback.generate(scope)
 
     def resolve_conflict(self, conflict_id: str, resolution: str | None = None) -> dict[str, Any]:
+        # First attempt to resolve in DB if applicable
+        if self.use_db:
+            try:
+                self.update("conflicts", conflict_id, {"status": "resolved"})
+            except Exception as e:
+                print(f"DB Error resolve_conflict: {e}", file=sys.stderr)
+        
         return self.fallback.resolve_conflict(conflict_id, resolution)
 
 
