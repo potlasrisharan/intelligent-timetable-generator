@@ -1,0 +1,124 @@
+Intelligent Timetable Generator — System Architecture (Detailed)
+High-Level Architecture Overview
+This system utilizes a microservice-style, multi-layer architecture designed for scalability and separation of concerns:
+Frontend (React)
+↓
+Backend API (FastAPI)
+↓
+Task Queue (Redis)
+↓
+Worker (Celery + OR-Tools Solver)
+↓
+Database (PostgreSQL)
+↓
+Reports / Exports / Dashboard Metrics
+Architecture Layers Explained
+1. Frontend Layer (Client)
+	•	Technology: React + Tailwind
+	•	Purpose: User Interface (UI)
+	•	Responsibilities:
+	•	Login page
+	•	Dashboard
+	•	Course/Faculty/Room management forms
+	•	Timetable grid editor
+	•	Drag and drop scheduling
+	•	Conflict panel
+	•	Reports & analytics
+	•	Export buttons
+	•	Version history
+	•	CSV upload
+	•	Load sample data
+	•	Flow: The Frontend strictly communicates by sending API requests to the Backend.
+2. Backend API Layer (FastAPI)
+	•	Technology: FastAPI (Python)
+	•	Purpose: The "brain" and gatekeeper of the web application.
+	•	Responsibilities:
+	•	Authentication (JWT)
+	•	CRUD APIs (courses, faculty, rooms, sections)
+	•	Validation rules
+	•	Timetable version management
+	•	Conflict detection
+	•	Lock/override slots
+	•	Export PDF/Excel
+	•	Reports
+	•	Send generation job to the queue
+	•	Fetch solver results
+	•	Dashboard metrics
+	•	Audit logs
+	•	Rate limiting
+	•	Security checks
+	•	Important: The Backend does NOT run the solver directly. It delegates this heavy task to the Worker layer.
+3. Task Queue Layer (Redis)
+	•	Technology: Redis
+	•	Purpose: Acts as a message broker and temporary storage.
+	•	Responsibilities:
+	•	Message broker
+	•	Job queue
+	•	Rate limiting
+	•	Token blacklist
+	•	Caching
+	•	Why Redis? Timetable generation requires heavy computation. Running it on the backend would block the API. Redis queues the job safely.
+	•	Flow: Admin clicks Generate → FastAPI → Redis Queue → Celery Worker → Solver
+4. Worker / Solver Layer (Celery + OR-Tools)
+	•	Technology: Celery Worker + Google OR-Tools CP-SAT
+	•	Purpose: The mathematical engine.
+	•	Responsibilities:
+	•	Builds the constraint model
+	•	Applies hard constraints
+	•	Applies soft constraints
+	•	Runs the solver
+	•	Generates the timetable
+	•	Calculates the quality score
+	•	Detects conflicts
+	•	Saves the final timetable to the database
+5. Database Layer (PostgreSQL)
+	•	Technology: PostgreSQL
+	•	Purpose: Persistent storage for all system data.
+	•	Main Tables:
+	•	departments, courses, faculty, rooms, sections, combined_sections
+	•	timeslots, holidays
+	•	timetable_versions, timetable_entries, locked_slots
+	•	conflict_log, users, audit_logs
+	•	Responsibilities:
+	•	Stores input data
+	•	Stores generated timetables
+	•	Manages version history
+	•	Keeps logs
+	•	Holds report data
+6. Export & Reporting Layer
+	•	Purpose: Formatting and delivering output.
+	•	Responsibilities:
+	•	PDF timetable generation
+	•	Excel export
+	•	Room utilization reports
+	•	Faculty workload reports
+	•	Conflict reports
+	•	Quality score reports
+	•	Libraries: ReportLab (PDF), OpenPyXL (Excel).
+Detailed Architecture Flow (Full Data Flow)
+This represents the exact lifecycle of data from the user input to the final exported report:
+	•	User (Admin)
+	•	↓
+	•	React Frontend
+	•	↓
+	•	FastAPI Backend
+	•	↓
+	•	PostgreSQL Database (Saves initial inputs)
+	•	↓
+	•	Redis Queue (Receives generation command)
+	•	↓
+	•	Celery Worker (Picks up job)
+	•	↓
+	•	OR-Tools Solver (Computes schedule)
+	•	↓
+	•	Timetable Generated
+	•	↓
+	•	Save to Database (PostgreSQL)
+	•	↓
+	•	Backend API (Retrieves finished schedule)
+	•	↓
+	•	Frontend Dashboard (Displays grid to Admin)
+	•	↓
+	•	PDF / Excel Export / Reports (Generated on demand)
+Final Architecture Diagram
+ ┌─────────────────────┐  │      Frontend       │  │   React + Tailwind  │  │ Dashboard / Editor  │  └─────────┬───────────┘            │ HTTP API            ▼  ┌─────────────────────┐  │      Backend        │  │      FastAPI        │  │ Auth / CRUD / API   │  └───────┬───────┬─────┘          │       │          │       │          ▼       ▼  ┌────────────┐  ┌────────────┐  │ PostgreSQL │  │   Redis    │  │ Database   │  │ Queue/Cache│  └────────────┘  └──────┬─────┘                          │                          ▼                  ┌──────────────┐                  │ Celery Worker│                  │ OR-Tools     │                  │ Solver Engine│                  └──────┬───────┘                         │                         ▼                  ┌──────────────┐                  │ Timetable    │                  │ Generated    │                  └──────┬───────┘                         │                         ▼                  ┌──────────────┐                  │ Reports / PDF│                  │ Excel Export │                  └──────────────┘ 

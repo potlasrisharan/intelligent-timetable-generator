@@ -1,0 +1,449 @@
+PRODUCT REQUIREMENTS DOCUMENT
+Intelligent Timetable Generator (Version 4.0)
+for Multi-Section Academic Scheduling
+Document Information
+	•	Version: 4.0 — Master Final (Extended)
+	•	Project: Smart Campus Hackathon 2026
+	•	Institution: South Asian University
+	•	Document Status: Approved
+	•	Classification: Confidential
+1. Executive Summary
+The Intelligent Timetable Generator is a full-stack, constraint-based academic scheduling system designed to automatically generate conflict-free timetables for university environments. The system replaces error-prone, manual spreadsheet scheduling with a formal constraint programming engine (Google OR-Tools). This engine acts as the "brain" of the application, mathematically guaranteeing schedule correctness while optimizing for quality metrics such as faculty workload balance, room utilization, and student timetable compactness. The final product includes a comprehensive admin dashboard, conflict resolution tools, and beautiful PDF/Excel exports.
+2. Problem Statement
+Educational institutions face an incredibly complex puzzle when creating schedules. The system must simultaneously balance:
+	•	Multiple sections existing for the same semester and department.
+	•	Theory vs. Labs: Courses require separate theory and practical (lab) hours.
+	•	Combined Sections: Sometimes two or more sections are merged into one large room with one teacher.
+	•	Faculty Availability: Teachers have specific days they are available and a maximum number of classes they can teach per day.
+	•	Room Capacity: A class of 60 students cannot be put into a room that only holds 40. Labs require specialized lab rooms.
+	•	Lunch Breaks & Hours: Fixed institutional working hours and mandatory lunch breaks.
+	•	Consecutive Labs: Lab sessions must be scheduled back-to-back on the same day.
+	•	No Overlaps: A teacher or a room cannot be in two places at once.
+Manual scheduling at this scale takes 40+ hours per semester, often resulting in undetected clashes and suboptimal use of time. A formal constraint-aware automated system is the only reliable solution.
+3. System Modules Overview
+To make this giant system manageable, it is divided into five core building blocks that interact seamlessly:
+	•	Input Configuration Module: The data entry point. This is where admins define the basic rules of the puzzle—courses, sections, teachers, and rooms.
+	•	Constraint Engine (Scheduling Core): The mathematical solver. It takes the data from the Input Module, applies strict rules (constraints), and calculates the perfect timetable.
+	•	Conflict Detection & Resolution: The safety net. If a human admin tries to manually change the schedule, this module checks if the new change breaks any rules and suggests better alternatives.
+	•	Output Generation: The presentation layer. It takes the mathematical result and turns it into readable, color-coded PDF and Excel grids.
+	•	Admin Dashboard: The central control room. It provides a visual interface for the admin to trigger generation, view health metrics, and manage the other four modules.
+4. Goals & Success Criteria
+The system's success is measured by strict, testable metrics:
+Metric
+Target
+Measurement Method
+Timetable Generation Time
+< 30 seconds
+Logged server-side on each /generate call
+Conflict-Free Guarantee
+100% hard constraints satisfied
+Automated verification pass post-generation
+Room Utilization
+> 70%
+(Occupied slots / Total available slots) × 100
+Faculty Idle Gaps
+Minimized (< 5 gaps/week)
+Penalty score logged per generated schedule
+Admin Input Time
+< 10 mins for demo dataset
+Measured using the "Load Sample Data" feature
+Export Time (PDF/Excel)
+< 5 seconds
+Timed from button click to file download
+Solver UNSAT Rate
+0% on valid inputs
+No feasibility failure on correctly configured data
+5. Stakeholders & User Roles
+Role
+Responsibilities
+Access Level
+Super Admin
+System-wide configuration, multi-department control.
+Full Access
+Department Admin
+Manage courses, faculty, rooms, and sections for their specific department.
+Dept-scoped Write + Generate
+Faculty
+View personal timetable, set availability preferences.
+Read own timetable + Write availability
+Student
+View timetable for their specific section.
+Read own section timetable only
+6. Authentication, Authorization & Security
+To ensure data integrity, the system uses strict security protocols:
+	•	Authentication: JWT-based stateless authentication (Access token: 1 hour TTL, Refresh token: 7 days TTL).
+	•	Password Security: Passwords hashed using bcrypt (minimum cost factor 12).
+	•	Password Policy: Minimum 8 characters, 1 uppercase, 1 number, 1 special character.
+	•	Rate Limiting: Maximum 5 failed login attempts per minute per IP before a 15-minute lockout.
+	•	Encryption: HTTPS required for all transit.
+	•	Role-Based Access Control (RBAC): Users are strictly limited to the permissions outlined in Section 5. API endpoints validate roles on every request.
+	•	Audit Logs: Every write, delete, and generation action is logged immutably.
+7. System Workflow / User Workflow
+Step-by-step administrative journey from login to published timetable:
+	•	Authentication: Admin logs in and is routed to the Dashboard.
+	•	Data Ingestion: Admin uploads CSVs for Courses, Faculty, Rooms, and Sections (or uses the UI to input data manually).
+	•	Configuration: Admin defines timeslots, lunch periods, holidays, and combined sections.
+	•	Generation: Admin clicks "Generate Timetable". The system sends an async request to the Celery worker and displays a loading progress bar.
+	•	Review & Adjust: Admin reviews the DRAFT timetable in the Timetable Editor. They use the Conflict Panel to resolve any minor issues or manual adjustments.
+	•	Activation: Admin clicks "Publish/Activate". The DRAFT becomes ACTIVE, and the previous ACTIVE schedule is ARCHIVED.
+	•	Export & Distribution: Admin exports the ACTIVE timetable to PDF/Excel for physical printing or external distribution.
+8. Application Navigation & UI Pages
+The application structure is clean and sidebar-driven:
+	•	Login / Setup: auth/login, auth/forgot-password
+	•	Dashboard: /dashboard (Main overview and health metrics)
+	•	Configurations (Master Data):
+	•	/courses (List, Add, Edit)
+	•	/faculty (List, Availability Matrix, Workload)
+	•	/rooms (List, Capacities, Types)
+	•	/sections (List, Student Counts)
+	•	/combined-sections (Builder UI)
+	•	/timeslots (Grid configuration)
+	•	/holidays (Calendar view)
+	•	Scheduling:
+	•	/editor (Drag-and-drop timetable grid)
+	•	/conflicts (Conflict resolution center)
+	•	Analytics & Output:
+	•	/reports (Utilization, Workload)
+	•	/history (Version management and restores)
+	•	System: /settings (User management, Global preferences)
+9. Input Configuration Module (Functional Requirements)
+This module dictates the validation rules for all system inputs.
+9.1 Course Management
+	•	course_id: String (Unique, alphanumeric + hyphen).
+	•	course_name: String (1-100 chars).
+	•	department: Foreign Key (Must be valid).
+	•	semester: Integer (1-8).
+	•	theory_hours_per_week: Integer (0-20).
+	•	practical_hours_per_week: Integer (0-20). Rule: Theory + Practical > 0.
+	•	lab_required: Boolean. Rule: Must be true if practical hours > 0.
+	•	consecutive_periods_required: Boolean. Rule: Default true if lab_required is true.
+9.2 Section Management
+	•	section_id: String (Unique).
+	•	student_count: Integer. Rule: 1-500. Used critically for room capacity checks.
+9.3 Faculty Management
+	•	faculty_id: String (Unique).
+	•	availability_slots: JSON array of available time slots.
+	•	max_periods_per_day: Integer (Default 4).
+	•	is_shared: Boolean (If true, can teach across multiple departments).
+	•	Business Rule: If total assigned course hours exceed available slots, the system blocks the save and throws an "Insufficient Availability" error.
+9.4 Room Management
+	•	room_id: String (Unique, e.g., "A-101").
+	•	capacity: Integer.
+	•	room_type: Enum (CLASSROOM or LAB).
+	•	department_exclusive: Foreign Key (If set, only that dept can use it; if null, it is shared).
+9.5 Time Slot Configuration
+	•	working_days: Array (e.g., MON-FRI).
+	•	periods_per_day: Integer (e.g., 8).
+	•	period_duration_minutes: Integer (Default 60).
+	•	lunch_break_period: Integer (Always blocked for scheduling).
+9.6 Combined Sections
+	•	Definition: Merging multiple sections for a single course into one slot.
+	•	Rules: Sections must be in the same semester. The combined_student_count must be  the assigned room's capacity. It utilizes exactly one faculty and one room.
+9.7 Holiday Management
+Admins can define dates as Holidays. The solver automatically blocks these days. If a holiday is added after a timetable is generated, the system triggers a warning.
+9.8 Bulk CSV Import & Sample Data Loader
+	•	CSV Import: Admins can upload CSVs. The system validates row-by-row and reports errors (e.g., "Row 4: Invalid Department ID").
+	•	Sample Demo Dataset Specification: For hackathon judging, the "Load Demo Data" button injects an instantly solvable, pre-configured dataset:
+	•	Departments: 3 (Computer Science, Electrical, Mechanical)
+	•	Courses: 15 (Mix of Theory-only and Theory+Lab)
+	•	Faculty: 10 (With diverse availability constraints)
+	•	Rooms: 12 (9 Classrooms, 3 Labs)
+	•	Sections: 9 (3 per department)
+	•	Working Schedule: 5 Days (Mon-Fri), 8 Periods/Day.
+10. Constraint Engine — Formal Specification
+This is the core mathematical model powered by Google OR-Tools CP-SAT.
+10.1 Decision Variables
+The fundamental question the math solver asks is: 
+	•	 = Course,  = Section,  = Faculty,  = Room,  = Day,  = Period.
+	•	If , the class is scheduled. If , it is not.
+10.2 Hard Constraints (Must NEVER be violated)
+	•	HC-01: No faculty double-booking.
+	•	HC-02: No room double-booking.
+	•	HC-03: No section double-booking.
+	•	HC-04: Room capacity enforcement (room.capacity >= section.student_count).
+	•	HC-05: Lab sessions MUST be in LAB-type rooms.
+	•	HC-06: Theory sessions MUST be in CLASSROOM-type rooms.
+	•	HC-07: The Lunch slot is always empty.
+	•	HC-08: Faculty availability windows are strictly respected.
+	•	HC-09: Faculty max_periods_per_day is not exceeded.
+	•	HC-10: Required weekly hours (theory + practical) are exactly fulfilled.
+	•	HC-11: Practical sessions (Labs) must be consecutive on the same day.
+	•	HC-12: Combined sections share the exact same slot, room, and faculty.
+	•	HC-13: Holiday slots are completely blocked.
+	•	HC-14: "Locked" slots (manually fixed by admins) survive regeneration unchanged.
+	•	HC-15: Department-exclusive rooms are only assigned to their respective departments.
+	•	HC-16: Scheduling only occurs within defined working days/hours.
+10.3 Soft Constraints & Objective Function
+The solver tries to optimize the schedule by minimizing a penalty score:
+	•	SC-01 (Weight 10): Minimize faculty idle gaps.
+	•	SC-02 (Weight 8): Balance workload across days.
+	•	SC-03 (Weight 6): Prefer faculty preferred slots.
+	•	SC-04 (Weight 4): Avoid last period classes.
+	•	SC-05 (Weight 5): Spread subjects across the week.
+	•	SC-06 (Weight 3): Minimize room changes for sections.
+	•	SC-07 (Weight 2): Balance Morning/Afternoon load.
+	•	SC-08 (Weight -7): Maximize room utilization.
+	•	Objective Function: Minimize . Time limit: 25 seconds.
+10.4 Solver Failure (UNSAT) Handling & Relaxation Wizard
+If the puzzle is mathematically impossible:
+	•	The solver returns INFEASIBLE.
+	•	A Conflict Analyzer runs to find the Irreducible Infeasible Subset (IIS).
+	•	The system displays a human-readable error.
+	•	A Relaxation Wizard UI pops up, suggesting the easiest fixes.
+11. Conflict Detection & Resolution
+11.1 Conflict Types & Auto-Suggestions
+	•	Double Booking / Capacity Break: Critical severity. The system suggests the next available free room/slot.
+	•	Faculty Overload: High severity. System suggests moving the class to a lighter day.
+11.2 Manual Override Rules
+	•	Hard Constraint Override: BLOCKED. UI rejects drops causing mathematical impossibilities.
+	•	Soft Constraint Override: ALLOWED. UI accepts drops but logs a warning about Quality Score degradation.
+11.3 Resolution Workflow
+	•	Conflict detected during manual edit.
+	•	Conflict Panel opens showing the exact violated constraint.
+	•	System lists Top 3 alternative slots ranked by lowest penalty score.
+	•	Admin clicks a suggestion to auto-resolve.
+12. Timetable Versioning & Regeneration
+12.1 Timetable Version Lifecycle State Machine
+Timetables exist as distinct snapshots passing through a strict lifecycle:
+	•	DRAFT: The initial state of a newly generated or modified timetable. Only visible to admins.
+	•	Transition -> ACTIVE: When admin clicks "Publish".
+	•	ACTIVE: The live, published schedule visible to faculty and students. (Only ONE Active version allowed per department).
+	•	Transition -> ARCHIVED: Automatically happens to the old ACTIVE version when a new DRAFT is published.
+	•	ARCHIVED: Read-only historical record.
+	•	Transition -> RESTORED (ACTIVE): Admin triggers a rollback, making this the ACTIVE version again.
+12.2 Regeneration Modes
+	•	Full Regenerate: Solves from scratch. Erases manual overrides; preserves Locked Slots.
+	•	Partial Regenerate: Freezes satisfactory slots and re-solves only empty/unlocked areas.
+	•	Conflict-Only Re-solve: Focuses solver exclusively on slots currently throwing errors.
+13. Output Generation & Reports
+13.1 Display Views
+	•	Section-wise: Standard student view (Days x Periods).
+	•	Faculty-wise: Standard teacher view.
+	•	Room-wise: Shows occupancy per classroom.
+	•	Daily View: Master view of all activities happening on a single date.
+	•	Combined Class View: Filtered view showing only merged sessions.
+13.2 Export Specifications
+	•	PDF Format: Landscape A4. Days as columns, periods as rows. Lunch break shaded gray. Course code bold (10pt), Faculty regular (9pt), Room italic blue (8pt).
+	•	Excel Format: Multi-sheet workbook (.xlsx). Sheet 1: Sections, Sheet 2: Faculty, Sheet 3: Room Utilization, Sheet 4: Conflict Report.
+13.3 Analytical Reports
+	•	Room Utilization: Occupancy percentages per building/room.
+	•	Faculty Workload: Total hours, gaps per week, overload flags.
+	•	Schedule Quality Score: Breakdown of soft constraint penalties.
+14. Admin Dashboard
+14.1 Dashboard Layout Specification
+Designed for immediate situational awareness:
+	•	Top Navigation Bar: Breadcrumbs, Global Department Context Switcher, Profile Dropdown.
+	•	Row 1 (System Health Cards): 4 Cards.
+	•	Generation Time (Green <30s, Red >60s).
+	•	Quality Score (Gauge chart).
+	•	Room Utilization %.
+	•	Active Conflicts (Large red number if >0).
+	•	Row 2 (Quick Actions): Large, prominent buttons.
+	•	"Generate New Schedule"
+	•	"Load Demo Data"
+	•	"Export to PDF"
+	•	Row 3 (Split View):
+	•	Left Pane (60%): Active Version summary (Status, Publish Date) and mini grid preview.
+	•	Right Pane (40%): Activity Feed (Scrollable audit log of recent edits and logins).
+15. Database Schema
+Powered by PostgreSQL, using strict relational integrity:
+	•	departments: dept_id (PK), name, code.
+	•	courses: course_id (PK), name, hrs, dept_id (FK).
+	•	faculty: faculty_id (PK), name, max_periods.
+	•	sections: section_id (PK), student_count.
+	•	rooms: room_id (PK), capacity, type.
+	•	timeslots: id (PK), day, period, start_time, end_time, is_lunch.
+	•	combined_sections: combined_id (PK), course_id (FK), faculty_id (FK). M2M with sections.
+	•	holidays: holiday_id (PK), date, name.
+	•	timetable_versions: version_id (PK, UUID), status, quality_score, generation_time.
+	•	timetable_entries: entry_id (PK), version_id (FK), and FKs to all entities. UNIQUE constraint on (version, room, day, period).
+	•	locked_slots: lock_id (PK), entry_id (FK).
+	•	conflict_log: tracks overridden conflicts and resolution status.
+	•	users: user_id (PK), email, password_hash, role.
+	•	audit_logs: Append-only log of user actions.
+16. API Specification
+RESTful JSON API built with FastAPI:
+	•	POST /auth/login: Returns JWT tokens.
+	•	GET/POST/PUT/DELETE for /courses, /faculty, /rooms, /sections.
+	•	POST /combined-sections: Merges sections.
+	•	POST /generate: Async call triggering Celery task, returns job_id.
+	•	GET /generate/status/:job_id: Polls solver progress.
+	•	POST /timetable/override: Move a slot (Returns 409 if Hard Constraint violated).
+	•	POST /timetable/lock: Toggles slot lock status.
+	•	POST /timetable/activate/:version_id: Publishes timetable.
+	•	GET /export/pdf & GET /export/excel: Returns binary file blobs.
+	•	POST /import/csv: Accepts multipart form file upload.
+	•	POST /import/sample-data: Seeds database instantly.
+17. Logging, Monitoring & Backups
+	•	Audit Logs: Every API request modifying data is logged.
+	•	Metrics Tracking: Generation execution time, solver status, and quality scores.
+	•	Database Backups: Automated daily PostgreSQL pg_dump snapshots.
+	•	Disaster Recovery: Instant rollback by restoring an ARCHIVED version.
+18. System Architecture & Technology Stack
+	•	Frontend: React 18.3.x, TailwindCSS 3.4.x, React Query, DnD Kit.
+	•	Backend API: FastAPI 0.111.x, Python 3.11.x, Pydantic.
+	•	Solver Engine: Google OR-Tools CP-SAT 9.10.x.
+	•	Task Queue: Celery + Redis.
+	•	Database: PostgreSQL 16.x + SQLAlchemy 2.x ORM.
+	•	Exports: ReportLab (PDF), OpenPyXL (Excel).
+18.1 Deployment Architecture
+Designed for production-readiness using Docker Compose:
+	•	Nginx Reverse Proxy: Routes port 80/443 traffic to the Frontend container or API container based on URL path (/api/*). Serves static React files.
+	•	Frontend Container: Lightweight Nginx alpine serving optimized React builds.
+	•	Backend API Container: Uvicorn running the FastAPI application.
+	•	Redis Container: In-memory message broker handling job queues for Celery.
+	•	Celery Worker Container(s): Contains the heavy OR-Tools C++ binaries. Can be scaled horizontally.
+	•	PostgreSQL Container: Persistent database volume mounted to the host filesystem.
+19. Non-Functional Requirements
+	•	Performance: Timetable generation under 30s. General API responses under 500ms.
+	•	Reliability: 99.9% uptime during demo. 100% hard constraint satisfaction guarantee.
+	•	Security: Covered under Section 6. Protection against SQL Injection and XSS.
+	•	Maintainability: >70% test coverage using pytest. Swagger UI documentation.
+19.1 Performance & Scaling Strategy
+To handle multiple departments and massive datasets concurrently:
+	•	Solver Isolation: Generation tasks are strictly offloaded from the main API thread to isolated Celery workers.
+	•	Horizontal Scaling: As load increases, additional Docker containers running Celery workers can be spun up. Redis manages task distribution automatically.
+	•	Database Optimization: Indexes placed on dept_id, version_id, and faculty_id. Connection pooling managed by SQLAlchemy to prevent connection exhaustion.
+	•	Caching: Department master data (Rooms, Courses) cached in Redis for fast API retrieval.
+20. Error Handling & Edge Cases
+The system anticipates and gracefully handles failure states:
+	•	Solver Infeasible: Triggers the Conflict Analyzer and Relaxation Wizard (Section 10.4).
+	•	Solver Timeout (>60s): Aborts generation, returns the best partial solution found, and prompts the user to relax constraints.
+	•	Concurrent Generation: If Admin B clicks "Generate" while Admin A's job is running for the same department, the API returns 409 Conflict: Generation already in progress.
+	•	CSV Import Errors: Entire transaction is rolled back if a single row fails validation. Returns a detailed array of errors (e.g., [{"row": 12, "error": "Room capacity missing"}]).
+	•	Holiday Added Post-Generation: A background cron job checks active timetables against new holidays. It flags affected slots in red on the UI with a "Re-solve Required" warning.
+	•	Export Failures: If PDF generation fails due to memory limits, the API catches the exception and returns a 500 Server Error with a fallback link to the Excel export.
+21. Development Roadmap (Hackathon Execution Plan)
+	•	Phase 1 (Hours 0-8): Data Foundation. DB schema, CRUD APIs, JWT Auth, Sample Data Loader.
+	•	Phase 2 (Hours 8-18): Solver Engine. Implement OR-Tools model, write constraints, and UNSAT handler.
+	•	Phase 3 (Hours 18-26): Core UI. React setup, Timetable grids, Admin Dashboard layout.
+	•	Phase 4 (Hours 26-32): Conflict & Override. Build drag-and-drop, real-time constraint checking.
+	•	Phase 5 (Hours 32-38): Versioning & Export. PDF/Excel generators, Version restore logic.
+	•	Phase 6 (Hours 38-44): Polish & Reports. Analytics reports, bug squashing.
+	•	Phase 7 (Hours 44-48): Demo Prep. Docker validation, Presentation run-through.
+22. Metrics & Observability
+Displayed directly on the dashboard to prove system efficacy:
+	•	Generation Time (ms): Proves speed.
+	•	Solver Status: OPTIMAL, FEASIBLE, UNSAT, or TIMEOUT.
+	•	Quality Score: Lower is better; proves optimization success.
+	•	Room Utilization %: Proves space efficiency.
+	•	Open Conflicts: Proves schedule safety.
+23. System Data Flow
+To understand how data moves through the application from start to finish:
+	•	Input Phase: The user enters configuration data (Courses, Faculty, Rooms) via the Frontend UI or CSV upload. The FastAPI backend validates this and stores it in PostgreSQL.
+	•	Dispatch Phase: When the user clicks "Generate", the API compiles the data into a mathematical payload and dispatches a job to Redis.
+	•	Execution Phase: A Celery Worker picks up the job from Redis, feeds the data to the OR-Tools CP-SAT solver, and computes the best possible timetable matrices.
+	•	Storage Phase: The completed schedule is written back to PostgreSQL as a DRAFT Timetable Version, along with its calculated Quality Score.
+	•	Presentation Phase: The Frontend fetches the new DRAFT data, rendering it visually in the Timetable Editor for review.
+	•	Publishing & Export Phase: The Admin activates the timetable. Once ACTIVE, the reporting engine can dynamically query the database to generate utilization analytics or render binary PDF/Excel exports.
+24. Entity Relationship Summary
+The relational database represents the scheduling domain through heavily linked entities:
+	•	Departments act as the root tenant for all data.
+	•	Courses, Faculty, Sections, and Rooms are child entities of Departments.
+	•	Combined Sections act as a bridging entity, linking a single Course and Faculty to multiple Sections.
+	•	Timetable Versions represent discrete generation events linked to a Department.
+	•	Timetable Entries are the atomic scheduled blocks. They belong to a single Version and maintain foreign keys to the assigned Course, Section, Faculty, Room, and Timeslot.
+	•	Users represent human accounts with roles, and Audit Logs track the relationship between Users and the actions they perform on the system data.
+25. Constraint Priority System
+The system manages conflicts by evaluating rules against a strict hierarchy of precedence:
+	•	Priority Level 1 (Absolute - Locked Slots): These are human-defined, pinned slots. The solver is strictly forbidden from moving them under any circumstance.
+	•	Priority Level 2 (Strict - Hard Constraints): Foundational math rules (e.g., no double-booking). The solver MUST satisfy these. If it cannot, the generation fails (UNSAT).
+	•	Priority Level 3 (Manual - Admin Overrides): A human admin can bypass soft constraints (e.g., forcing a teacher into a non-preferred slot). However, the UI will still block the admin if they try to violate a Level 2 Hard Constraint.
+	•	Priority Level 4 (Optimization - Soft Constraints): The solver attempts to satisfy these rules to make the timetable "nicer," but will freely break them to satisfy Level 1 or Level 2 rules.
+26. Schedule Quality Score Calculation
+The Quality Score is an integer metric reflecting how well the timetable satisfies human preferences. It is calculated during the generation process.
+Formula: Total Penalty Score = Σ (Violations of Soft Constraint 'i' × Weight 'i')
+Example: If a schedule forces a faculty member into 2 non-preferred slots (Weight: 6) and creates 1 idle gap (Weight: 10), the penalty added is (2 × 6) + (1 × 10) = 22.
+A lower Quality Score indicates a more optimized, human-friendly timetable. A score of 0 means a theoretically perfect schedule. Negative scores can be achieved if bonus weights (like maximizing room utilization) outweigh penalties.
+27. Security Threat Model
+The application proactively defends against common web vulnerabilities:
+	•	SQL Injection: Entirely mitigated by using SQLAlchemy ORM, which automatically parameterizes all database queries.
+	•	Unauthorized Access / Privilege Escalation: Prevented via strict Role-Based Access Control (RBAC). Department IDs are checked on every API request to prevent cross-tenant data access.
+	•	Token Misuse: JWTs are short-lived (1 hour). If a user logs out, their refresh token is immediately pushed to a Redis blocklist to prevent reuse.
+	•	File Upload Attacks: CSV import endpoints validate the MIME-type, enforce a strict file size limit (e.g., 5MB), and parse data safely using Pandas before it ever touches the database.
+	•	API Abuse (DDoS/Brute Force): Redis handles rate limiting at the API gateway level, throttling auth attempts to 5 per minute and general data requests to 20 per second per IP.
+28. Assumptions & Limitations
+System design operates under the following known boundaries:
+	•	Max Scale: Optimized for up to 10 departments per tenant, and up to 20 sections per department.
+	•	Time Grid: Supports a maximum of 10 periods per day.
+	•	Solver Timeouts: To prevent infinite hanging, the solver enforces a strict 60-second absolute timeout. If a perfect solution isn't found, it returns the best feasible schedule up to that point.
+	•	Lab Continuity: Labs must be scheduled consecutively on the same day. The system does not support labs that span across multiple days.
+	•	Registration Data: The system assumes student cohorts are grouped into rigid "Sections". It does not handle individualized, a-la-carte student course registrations dynamically.
+29. Glossary
+	•	Hard Constraint: A mandatory rule. If broken, the timetable is completely invalid.
+	•	Soft Constraint: A preference. Broken rules add a penalty to the Quality Score but the timetable is still valid.
+	•	UNSAT (Infeasible): A state where the puzzle is mathematically impossible to solve with the current rules.
+	•	CP-SAT: Constraint Programming Satisfiability. The specific mathematical engine within Google OR-Tools used to solve this puzzle.
+	•	Combined Section: Multiple student groups sharing one teacher and one room at the same time.
+	•	Locked Slot: A timetable block manually pinned by an admin that the solver is not allowed to move.
+	•	Quality Score: The total sum of all soft constraint penalties. The algorithm tries to make this number as close to zero as possible.
+	•	Relaxation Wizard: A tool that helps humans figure out which rules to "relax" or change when a puzzle becomes UNSAT.
+30. Future Enhancements
+Roadmap for post-hackathon versions:
+	•	Student Timetable Mobile App: Native iOS/Android app for push notifications regarding room changes.
+	•	AI-Based Faculty Preference Learning: Machine learning model to predict and auto-fill faculty preferred_slots based on historical data.
+	•	Automatic Exam Timetable Generator: Extending the solver to handle mid-term and final examination scheduling with invigilation duties.
+	•	Room Maintenance Scheduling: Blocking out rooms for cleaning/maintenance without breaking the schedule.
+	•	Attendance Integration: Linking timetable blocks directly to a real-time student attendance API.
+	•	Notification System: In-app and email alerts triggered on timetable activation and ad-hoc overrides.
+	•	Calendar Integration: One-click synchronization exporting schedules directly to Google Calendar and Microsoft Outlook formats (.ics).
+31. UI/UX Design Principles
+The application user interface prioritizes clarity, error prevention, and data density.
+	•	Dashboard Layout Philosophy: Minimalist, card-based approach utilizing ample whitespace to reduce cognitive load. Critical action items (Generation, Publishing) are highly visible.
+	•	Color Coding: * Red (#EF4444): Hard constraint violations, system errors, critical capacity limits.
+	•	Amber/Yellow (#F59E0B): Soft constraint warnings, unsaved draft statuses.
+	•	Green (#10B981): Successful generations, optimal solver states, active schedule markers.
+	•	Blue (#3B82F6): Informational elements, neutral UI state.
+	•	Drag-and-Drop Usability: Features smooth snapping animations. Ghosting effects indicate invalid drop zones. If a drop breaks a constraint, a tactile visual "snap-back" animation is paired with the error notification.
+	•	Responsive Design: Utilizes fluid grid layouts. While the complex scheduling editor is desktop-first, view-only grids for faculty and students adapt dynamically to mobile and tablet breakpoints.
+	•	Accessibility: WCAG 2.1 AA compliant. Supports keyboard navigation for timetable grids, ARIA tags for screen readers, and high-contrast toggles.
+	•	Tooltips & Dialogs: Context-sensitive tooltips appear after a 500ms hover on timetable slots revealing detailed metadata. Destructive actions (e.g., Full Regeneration, Archive Deletion) require explicit, typed confirmation dialogs.
+32. Testing Strategy
+Quality assurance enforces stability across all architectural layers.
+	•	Unit Testing (Solver Constraints): pytest suites validate the mathematical logic. Mock grids are supplied to ensure each of the 16 Hard Constraints independently triggers and holds.
+	•	Integration Testing (API & Database): Validates the CRUD pipelines and transaction rollbacks using FastAPI's TestClient and an isolated test database.
+	•	UI Testing (Dashboard): Cypress automates end-to-end browser tests verifying user authentication flows, dynamic grid rendering, and drag-and-drop interactions.
+	•	Load Testing (Generation): k6 stress-tests the API and Celery queue to ensure the system processes concurrent timetable generation requests reliably under 30 seconds.
+	•	Security Testing: Automated SAST (Static Application Security Testing) tools scan for dependency vulnerabilities. JWT token expiration and RBAC boundary tests are strictly enforced.
+	•	CSV Import Validation Testing: Extensive boundary testing handling malformed schemas, missing foreign keys, and excessively large payload files.
+	•	Export Testing: Verifies structural integrity, layout, and byte-size consistency of generated PDF and Excel file blobs.
+	•	Regression Testing: The entire test suite executes automatically via a CI/CD pipeline upon any pull request to the main repository branch.
+33. Risk Analysis & Mitigation
+Proactive strategies handling technical bottlenecks and systemic failures:
+Technical Risk
+Impact
+Probability
+Mitigation Strategy
+Solver Infeasibility
+High
+Medium
+Implement the Relaxation Wizard to detect the exact Irreducible Infeasible Subset (IIS) and guide the user to a resolution.
+Large Dataset Performance Issues
+High
+Low
+Enforce pagination on APIs. Offload heavy solver compute to async Celery workers preventing main thread blocking.
+Redis Queue Failure
+Critical
+Low
+Implement retry mechanisms. Redis will be configured with AOF (Append Only File) persistence to recover pending jobs upon restart.
+Database Crash
+Critical
+Low
+Implement automated daily snapshots (pg_dump) and continuous WAL archiving allowing Point-in-Time Recovery.
+Export Memory Limits
+Medium
+Medium
+Use streaming file generation techniques to assemble large Excel/PDF files in chunks, avoiding RAM exhaustion on the server.
+Concurrent Generation Conflicts
+Medium
+Medium
+Implement Redis-based distributed locking to prevent multiple overlapping solves for the same department. Return 409 Conflict.
+34. System Acceptance Criteria
+The system is considered fundamentally complete and successful when:
+	•	Performance: Full timetable generation consistently completes in under 30 seconds for the standardized Demo Dataset.
+	•	Accuracy: Automated verification scripts confirm exactly zero (0) Hard Constraint violations on any successfully OPTIMAL or FEASIBLE output.
+	•	Export Capability: The UI can reliably trigger and download correctly formatted .pdf and .xlsx files reflecting the Active schedule without timeouts.
+	•	Lifecycle Fidelity: Transitioning an ARCHIVED version to ACTIVE works flawlessly, replacing the prior schedule across all user views.
+	•	Conflict Engine: The Timetable Editor accurately intercepts and flags manual edits that violate constraints, suggesting valid alternatives.
+	•	Telemetry: The Admin Dashboard successfully updates and displays real-time metrics (Quality Score, Generation Time) synchronously with the database.
+— End of Document —
