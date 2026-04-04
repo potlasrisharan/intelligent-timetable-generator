@@ -11,7 +11,9 @@ import { Label } from "@/components/ui/label"
 import { authService } from "@/lib/services/auth-service"
 import type { DashboardMetrics, Course, Section, UserRole } from "@/lib/types"
 
-const API_BASE = "http://localhost:8000/api/v1"
+import { envConfig } from "@/lib/config"
+
+const API_BASE = envConfig.apiBaseUrl
 
 export function DashboardRenderer({
   metrics,
