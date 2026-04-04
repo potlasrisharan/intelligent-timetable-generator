@@ -12,7 +12,7 @@ from ..models import (
     TimetableVersion,
 )
 from ..store import store
-from ..worker import generate_timetable_task
+from ..solver.engine import generate_timetable
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
@@ -39,9 +39,9 @@ def get_versions() -> list[TimetableVersion]:
 
 @router.post("/generate", response_model=dict)
 def generate_schedule(payload: GenerateRequest) -> dict:
-    # Using celery background task
-    task = generate_timetable_task.delay("dept_id", "version_id")
-    return {"ok": True, "message": "Generation started", "task_id": task.id}
+    # Using direct synchronous OR-tools engine for real-time calculation
+    result = generate_timetable("dept_id", "version_id")
+    return result
 
 
 @router.post("/conflicts/{conflict_id}/resolve", response_model=Conflict)
