@@ -30,16 +30,15 @@ export const authService = {
 
   async signIn(email: string, password?: string) {
     const mockRoleMap: Record<string, typeof demoUser["role"]> = {
-      "superadmin@sau.edu": "SUPER_ADMIN",
-      "deptadmin@sau.edu": "DEPARTMENT_ADMIN",
-      "faculty@sau.edu": "FACULTY",
+      "admin@sau.edu": "ADMIN",
+      "teacher@sau.edu": "TEACHER",
       "student@sau.edu": "STUDENT",
     }
 
     const fallbackUser = {
       ...demoUser,
       email: email || demoUser.email,
-      role: mockRoleMap[email] || "SUPER_ADMIN",
+      role: mockRoleMap[email] || "ADMIN",
       name: email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1),
     }
     const user = await postJsonWithFallback("/auth/sign-in", { email, password }, fallbackUser)

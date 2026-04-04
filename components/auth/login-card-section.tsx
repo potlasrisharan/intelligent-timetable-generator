@@ -24,7 +24,7 @@ import { authService } from "@/lib/services/auth-service"
 
 export function LoginCardSection({ nextPath }: { nextPath: string }) {
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("superadmin@sau.edu")
+  const [email, setEmail] = useState("admin@sau.edu")
   const [password, setPassword] = useState("demo-access")
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
@@ -103,26 +103,18 @@ export function LoginCardSection({ nextPath }: { nextPath: string }) {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className={email === "superadmin@sau.edu" ? "bg-amber-300/10 border-amber-300/30 text-amber-200" : "bg-white/5 border-white/10 text-slate-300 font-normal"}
-                  onClick={() => setEmail("superadmin@sau.edu")}
+                  className={email === "admin@sau.edu" ? "bg-amber-300/10 border-amber-300/30 text-amber-200" : "bg-white/5 border-white/10 text-slate-300 font-normal"}
+                  onClick={() => setEmail("admin@sau.edu")}
                 >
-                  Super Admin
+                  Admin
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className={email === "deptadmin@sau.edu" ? "bg-amber-300/10 border-amber-300/30 text-amber-200" : "bg-white/5 border-white/10 text-slate-300 font-normal"}
-                  onClick={() => setEmail("deptadmin@sau.edu")}
+                  className={email === "teacher@sau.edu" ? "bg-amber-300/10 border-amber-300/30 text-amber-200" : "bg-white/5 border-white/10 text-slate-300 font-normal"}
+                  onClick={() => setEmail("teacher@sau.edu")}
                 >
-                  Dept Admin
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={email === "faculty@sau.edu" ? "bg-amber-300/10 border-amber-300/30 text-amber-200" : "bg-white/5 border-white/10 text-slate-300 font-normal"}
-                  onClick={() => setEmail("faculty@sau.edu")}
-                >
-                  Faculty
+                  Teacher
                 </Button>
                 <Button 
                   variant="outline" 

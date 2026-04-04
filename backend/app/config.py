@@ -10,7 +10,7 @@ def _split_csv(value: str) -> list[str]:
 
 @dataclass(frozen=True)
 class Settings:
-    app_name: str = "Intelligent Timetable Generator API"
+    app_name: str = "TimeTable X API"
     app_version: str = "0.1.0"
     api_prefix: str = "/api/v1"
     host: str = os.getenv("BACKEND_HOST", "127.0.0.1")

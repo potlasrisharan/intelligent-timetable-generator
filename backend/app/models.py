@@ -5,7 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 
-UserRole = Literal["SUPER_ADMIN", "DEPARTMENT_ADMIN", "FACULTY", "STUDENT"]
+UserRole = Literal["ADMIN", "TEACHER", "STUDENT"]
 AppStatus = Literal["healthy", "warning", "critical", "inactive"]
 ConflictSeverity = Literal["critical", "high", "medium", "low"]
 TimetableVersionStatus = Literal["DRAFT", "ACTIVE", "ARCHIVED"]

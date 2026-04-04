@@ -1,7 +1,6 @@
 export type UserRole =
-  | "SUPER_ADMIN"
-  | "DEPARTMENT_ADMIN"
-  | "FACULTY"
+  | "ADMIN"
+  | "TEACHER"
   | "STUDENT"
 
 export type AppStatus = "healthy" | "warning" | "critical" | "inactive"

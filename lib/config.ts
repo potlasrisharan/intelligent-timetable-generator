@@ -1,6 +1,6 @@
 export const appConfig = {
-  name: "Intelligent Timetable Generator",
-  shortName: "ITG",
+  name: "TimeTable X",
+  shortName: "TTX",
   institution: "South Asian University",
   description:
     "Premium academic scheduling frontend for timetable generation, conflict resolution, analytics, and versioned publishing.",

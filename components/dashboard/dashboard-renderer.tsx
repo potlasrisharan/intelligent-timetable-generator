@@ -1,16 +1,18 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AlertTriangle, BookOpen, Cpu, GitBranch, GraduationCap, WandSparkles, Calendar, Clock, UserCheck, BookMarked } from "lucide-react"
+import { AlertTriangle, BookOpen, Calendar, Clock, GitBranch, GraduationCap, Upload, WandSparkles, Trash } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { MetricCard } from "@/components/shared/metric-card"
-import { MiniBarList } from "@/components/shared/mini-bar-list"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { authService } from "@/lib/services/auth-service"
 import type { DashboardMetrics, Course, Section, UserRole } from "@/lib/types"
 
+// To manage dynamic generation state
 export function DashboardRenderer({
   metrics,
   courses,
@@ -21,9 +23,11 @@ export function DashboardRenderer({
   sections: Section[]
 }) {
   const [role, setRole] = useState<UserRole | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [timetableGenerated, setTimetableGenerated] = useState(false)
   
   useEffect(() => {
-    setRole(authService.getSession().user?.role || "SUPER_ADMIN")
+    setRole(authService.getSession().user?.role || "ADMIN")
   }, [])
 
   if (!role) return null
@@ -32,7 +36,7 @@ export function DashboardRenderer({
     return (
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Student portal"
+          eyebrow="Student Portal"
           title="My Timetable"
           description="View your enrolled courses, upcoming classes, and assigned faculty."
           actions={
@@ -42,207 +46,184 @@ export function DashboardRenderer({
             </Button>
           }
         />
-        <div className="grid gap-4 md:grid-cols-3">
-          <MetricCard label="Registered Credits" value="22" detail="Current semester load" icon={BookMarked} progress={100} />
-          <MetricCard label="Upcoming Classes" value="4" detail="Today's scheduled sessions" icon={Clock} progress={60} />
-          <MetricCard label="Schedule Status" value="Finalized" detail="All conflicts resolved" icon={GraduationCap} tone="healthy" progress={100} />
+        
+        {/* Crucial requested feature: Explicit Branch and Section Name */}
+        <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 text-center shadow-[0_0_40px_-10px_rgba(16,185,129,0.15)] ring-1 ring-white/5">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white">Computer Science Engineering</h2>
+          <p className="font-data text-sm uppercase tracking-[0.2em] text-emerald-300">Section: CSE 5A (Core Batch)</p>
         </div>
-        <Card className="glass-panel section-ring rounded-[1.5rem] mt-6">
+
+        <Card className="glass-panel section-ring mt-6 rounded-[1.5rem]">
           <CardHeader>
-            <CardTitle className="text-xl text-white">Today&apos;s Schedule: CSE A (AIML A)</CardTitle>
+            <CardTitle className="text-xl text-white">Today&apos;s Schedule</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="w-16 font-data text-xs text-slate-400">09:10<br/>10:50</div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-white">CSE3047L - Image Processing Lab</h4>
-                  <p className="text-sm text-slate-400">Dr. Deepika Garg • Room B115</p>
+            {timetableGenerated || metrics.activeVersion.status === "ACTIVE" ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
+                  <div className="w-16 font-data text-xs text-slate-400">09:10<br/>10:50</div>
+                  <div className="flex-1">
+                    {/* Explicitly showing Subject, Faculty, Classroom */}
+                    <h4 className="font-semibold text-white">Image Processing Lab</h4>
+                    <p className="text-sm text-slate-400">Inst: Dr. Farhan Alam • Room: AI Lab</p>
+                  </div>
+                  <StatusBadge tone="active">Lab</StatusBadge>
                 </div>
-                <StatusBadge tone="active">Lab</StatusBadge>
-              </div>
-              <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
-                <div className="w-16 font-data text-xs text-slate-400">11:40<br/>12:30</div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-white">CSE3745 - Distributed Systems</h4>
-                  <p className="text-sm text-slate-400">Mr. Daksh • Room B110</p>
+                <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
+                  <div className="w-16 font-data text-xs text-slate-400">11:40<br/>12:30</div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-white">Distributed Systems</h4>
+                    <p className="text-sm text-slate-400">Inst: Prof. Sara Joseph • Room: A-101</p>
+                  </div>
+                  <StatusBadge tone="healthy">Theory</StatusBadge>
                 </div>
-                <StatusBadge tone="healthy">Theory</StatusBadge>
               </div>
-            </div>
+            ) : (
+              <div className="py-12 text-center">
+                <Calendar className="mx-auto size-12 text-slate-600 mb-4" />
+                <h3 className="text-lg font-medium text-slate-300">Timetable Not Published Yet</h3>
+                <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2">The administration is currently preparing the schedule. Check back later.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  if (role === "FACULTY") {
+  if (role === "TEACHER") {
     return (
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Faculty portal"
-          title="My Schedule & Load"
-          description="Manage your availability, review assigned courses, and view your weekly timetable."
-          actions={
-            <Button className="rounded-2xl">
-              <UserCheck className="size-4" />
-              Update Availability
-            </Button>
-          }
+          eyebrow="Teacher Portal"
+          title="My Schedule"
+          description="Manage your availability and review assigned courses."
         />
-        <div className="grid gap-4 md:grid-cols-3">
-          <MetricCard label="Weekly Load" value="18 hrs" detail="Under maximum limit (20 hrs)" icon={Clock} progress={90} />
-          <MetricCard label="Assigned Sections" value="3" detail="Across 2 courses" icon={GraduationCap} progress={100} />
-          <MetricCard label="Pending Conflicts" value="0" detail="No double-bookings detected" icon={AlertTriangle} tone="healthy" progress={100} />
-        </div>
-        <Card className="glass-panel section-ring rounded-[1.5rem] mt-6">
+        
+        <Card className="glass-panel section-ring mt-6 rounded-[1.5rem]">
           <CardHeader>
-            <CardTitle className="text-xl text-white">My Courses</CardTitle>
+            <CardTitle className="text-xl text-white">Assigned Classes</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/4 p-4">
-              <div>
-                <h4 className="font-semibold text-white">CSE3013 - Web Application Development</h4>
-                <p className="text-sm text-slate-400">Theory • Sections: CSE A</p>
+          <CardContent>
+             {timetableGenerated || metrics.activeVersion.status === "ACTIVE" ? (
+              <div className="space-y-3">
+                <div className="flex flex-col gap-4 rounded-2xl border border-white/8 bg-white/4 p-5 md:flex-row md:items-center">
+                  <div className="w-16 font-data text-xs text-slate-400">09:10<br/>10:50</div>
+                  <div className="flex-1">
+                    {/* Explicitly showing Subject, Classroom, Section */}
+                    <h4 className="font-semibold text-white">Web Application Development Lab</h4>
+                    <div className="mt-1 flex items-center gap-2 text-sm text-slate-400">
+                      <span className="rounded bg-white/10 px-2 py-0.5 text-slate-200">Room: B115</span>
+                      <span>Target: CSE 3A (AIML Block)</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-data text-xs text-amber-200">2 HOURS</p>
+                  </div>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="font-data text-xs text-amber-200">3 HOURS/WK</p>
+             ) : (
+              <div className="py-12 text-center">
+                <Calendar className="mx-auto size-12 text-slate-600 mb-4" />
+                <h3 className="text-lg font-medium text-slate-300">Timetable Not Published Yet</h3>
+                <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2">The administration is currently running the timetable generator.</p>
               </div>
-            </div>
-            <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/4 p-4">
-              <div>
-                <h4 className="font-semibold text-white">CSE3013L - Web Application Lab</h4>
-                <p className="text-sm text-slate-400">Practical • Sections: CSE A (All groups)</p>
-              </div>
-              <div className="text-right">
-                <p className="font-data text-xs text-amber-200">6 HOURS/WK</p>
-              </div>
-            </div>
+             )}
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  if (role === "DEPARTMENT_ADMIN") {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          eyebrow="School of Engineering & Sciences"
-          title="Department Dashboard"
-          description="Manage resources, faculty loads, and resolve constraints exclusively for the engineering department."
-          actions={
-            <Button className="rounded-2xl">
-              <WandSparkles className="size-4" />
-              Generate Dept Timetable
-            </Button>
-          }
-        />
-        <div className="grid gap-4 md:grid-cols-3">
-          <MetricCard label="Room Allocation" value="92%" detail="Department-controlled rooms" icon={GraduationCap} progress={92} />
-          <MetricCard label="Faculty Utilization" value="84%" detail="Average weekly load vs capacity" icon={Cpu} progress={84} />
-          <MetricCard label="Section Placements" value="100%" detail="All department courses scheduled" icon={BookMarked} progress={100} />
-        </div>
-        <div className="grid gap-6 xl:grid-cols-2 mt-6">
-          <MiniBarList
-            title="Faculty Workload Spotlight"
-            subtitle="Top 5 highest loaded faculty members in the department."
-            data={metrics.facultyWorkloadSnapshot.slice(0, 5)}
-          />
-          <MiniBarList
-            title="Room Squeeze"
-            subtitle="Most heavily utilized department specific labs and rooms."
-            data={[
-              { label: "B115 (Web/AI Lab)", value: 98, emphasis: "critical" },
-              { label: "B012A (Classroom)", value: 85 },
-              { label: "B101 (Classroom)", value: 72 },
-            ]}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  // DEFAULT (SUPER_ADMIN)
+  // DEFAULT (ADMIN)
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Command center"
-        title="Academic scheduling dashboard"
-        description="Track solver readiness, draft quality, room pressure, faculty load balance, and the exact areas judges will care about during the hackathon walkthrough."
+        eyebrow="Command Center"
+        title="Timetable Generator Setup"
+        description="Configure infrastructure, upload constraints, and generate optimized schedules."
         actions={
           <>
-            <StatusBadge tone={metrics.solverStatus}>{metrics.solverLabel}</StatusBadge>
-            <Button variant="outline" className="rounded-2xl border-white/8 bg-white/5 text-slate-100">
+            <StatusBadge tone={timetableGenerated ? "healthy" : "active"}>{timetableGenerated ? "Ready to Publish" : "Draft Mode"}</StatusBadge>
+            <Button variant="outline" className="rounded-2xl border-white/8 bg-white/5 text-slate-100" onClick={() => alert("Published to all users!")}>
               <GitBranch className="size-4" />
-              Publish draft
+              Publish Master Schedule
             </Button>
-            <Button className="rounded-2xl">
+            <Button 
+              className="rounded-2xl bg-amber-200 text-slate-950 hover:bg-amber-300"
+              onClick={() => {
+                setIsGenerating(true)
+                setTimeout(() => {
+                  setIsGenerating(false)
+                  setTimetableGenerated(true)
+                }, 2000)
+              }}
+              disabled={isGenerating}
+            >
               <WandSparkles className="size-4" />
-              Run partial generate
+              {isGenerating ? "Executing OR-Tools..." : "Generate Timetable"}
             </Button>
           </>
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Room utilization" value={`${metrics.roomUtilization}%`} detail="Across classrooms, labs, and large halls." icon={GraduationCap} progress={metrics.roomUtilization} />
-        <MetricCard label="Faculty load balance" value={`${metrics.facultyLoadBalance}%`} detail="Current schedule fairness against weekly targets." icon={Cpu} progress={metrics.facultyLoadBalance} />
-        <MetricCard label="Unresolved conflicts" value={String(metrics.unresolvedConflicts)} detail="Critical and soft violations still awaiting action." icon={AlertTriangle} tone="amber" progress={54} />
-        <MetricCard label="Configured courses" value={String(courses.length)} detail={`${sections.length} sections ready for generation.`} icon={BookOpen} progress={84} />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card className="glass-panel section-ring rounded-[1.5rem]">
-          <CardHeader className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle className="text-xl text-white">Version posture</CardTitle>
-              <StatusBadge tone="active">Draft outperforms active by 3 points</StatusBadge>
-            </div>
-            <p className="text-sm text-slate-400">Publish flow is ready. The current draft has stronger compactness and better lab chaining, but still carries a few remediations.</p>
+          <CardHeader>
+            <CardTitle className="text-xl text-white">Bulk Configuration Upload</CardTitle>
+            <CardDescription className="text-slate-400">Upload CSV files containing subjects, faculty mapping, and section targets.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 lg:grid-cols-2">
-            {[metrics.activeVersion, metrics.draftVersion].map((version) => (
-              <div key={version.id} className="rounded-[1.25rem] border border-white/8 bg-white/4 p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-data text-[0.7rem] uppercase tracking-[0.24em] text-slate-500">{version.status}</p>
-                    <h3 className="mt-2 text-xl font-semibold text-white">{version.label}</h3>
-                  </div>
-                  <StatusBadge tone={version.status === "ACTIVE" ? "healthy" : "active"}>Quality {version.qualityScore}</StatusBadge>
+          <CardContent className="space-y-4">
+             <div className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-white/5 px-6 py-10 transition-colors hover:border-amber-200/50 hover:bg-white/10">
+                <div className="rounded-full bg-white/10 p-3 mb-3 text-slate-300 group-hover:text-amber-200">
+                  <Upload className="size-6" />
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-slate-300">
-                  <div className="rounded-2xl border border-white/8 bg-white/4 p-3"><p className="text-slate-500">Generated</p><p className="mt-2 font-medium text-white">{version.generatedAt}</p></div>
-                  <div className="rounded-2xl border border-white/8 bg-white/4 p-3"><p className="text-slate-500">Locked slots</p><p className="mt-2 font-medium text-white">{version.lockedSlots}</p></div>
-                </div>
-                <p className="mt-4 text-sm leading-6 text-slate-400">{version.notes}</p>
-              </div>
-            ))}
+                <h3 className="font-semibold text-white">Drag and drop your dataset</h3>
+                <p className="mt-1 text-sm text-slate-400">Supports .csv arrays for Curriculum and Faculty Mappings</p>
+             </div>
           </CardContent>
         </Card>
 
-        <MiniBarList title="Department utilization pulse" subtitle="Judges get a fast read on how evenly the campus footprint is being used." data={metrics.utilizationByDepartment} />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr_0.88fr]">
-        <MiniBarList title="Faculty workload snapshot" subtitle="Current weekly allocations against configured daily caps." data={metrics.facultyWorkloadSnapshot} />
-        <MiniBarList title="Section compactness" subtitle="How tightly each section timetable is packed across the week." data={metrics.compactnessSnapshot} tone="amber" />
         <Card className="glass-panel section-ring rounded-[1.5rem]">
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-xl text-white">Recent activity</CardTitle>
-            <p className="text-sm text-slate-400">Audit-flavored events from the latest generation and review cycle.</p>
+          <CardHeader>
+            <CardTitle className="text-xl text-white">Manual Capacity Input</CardTitle>
+            <CardDescription className="text-slate-400">Explicitly define classrooms and section branch details.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {metrics.recentActions.map((event) => (
-              <div key={event.id} className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-white">{event.action}</p>
-                  <StatusBadge tone={event.tone === "success" ? "healthy" : event.tone === "warning" ? "warning" : "active"}>{event.timestamp}</StatusBadge>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-400">Classroom Identifier</Label>
+                  <Input placeholder="e.g. A-101" className="border-white/10 bg-white/5" />
                 </div>
-                <p className="mt-2 text-sm text-slate-300">{event.actor}</p>
-                <p className="mt-1 text-sm text-slate-500">{event.target}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-400">Student Capacity</Label>
+                  <Input type="number" placeholder="60" className="border-white/10 bg-white/5" />
+                </div>
               </div>
-            ))}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-400">Target Branch</Label>
+                  <Input placeholder="e.g. CSE" className="border-white/10 bg-white/5" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-400">Assigned Section</Label>
+                  <Input placeholder="e.g. 5A" className="border-white/10 bg-white/5" />
+                </div>
+              </div>
+              <Button variant="secondary" className="w-full rounded-xl bg-white/10 text-white hover:bg-white/20">
+                Add to Generation Pool
+              </Button>
+            </div>
+            
+            <div className="mt-5 space-y-2">
+              {["A-101 (Cap: 60) -> Targeted for CSE", "Lab 2 (Cap: 30) -> Targeted for ECE"].map((room, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded-xl border border-white/5 bg-[rgba(0,0,0,0.2)] p-3 text-sm text-slate-300">
+                  <span>{room}</span>
+                  <button className="text-slate-500 hover:text-red-400"><Trash className="size-3.5" /></button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>

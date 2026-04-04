@@ -21,7 +21,7 @@ export const demoUser: AuthUser = {
   id: "admin-01",
   name: "Ayesha Rahman",
   email: "admin@sau.edu",
-  role: "SUPER_ADMIN",
+  role: "ADMIN",
   department: "University Scheduling Office",
 }
 
