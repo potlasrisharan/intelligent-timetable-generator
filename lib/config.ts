@@ -9,7 +9,7 @@ export const appConfig = {
 export const envConfig = {
   apiBaseUrl:
     process.env.NEXT_PUBLIC_API_BASE_URL ??
-    "http://127.0.0.1:8000/api/v1",
+    "https://itg-backend-837l.onrender.com/api/v1",
   supabaseUrl:
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://your-project.supabase.co",
   supabaseAnonKey:
