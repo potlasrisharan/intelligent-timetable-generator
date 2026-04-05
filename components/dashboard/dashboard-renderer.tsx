@@ -25,8 +25,20 @@ const API_BASE = envConfig.apiBaseUrl
 // ─────────────────────────────────────────────────────────────
 type JobStatus = "idle" | "queued" | "running" | "done" | "error"
 
+type SolverResult = {
+  status: string
+  solver_status?: string
+  quality_score?: number
+  entries_generated?: number
+  elapsed_ms?: number
+  message?: string
+}
+
+function asSolverResult(r: Record<string, unknown> | null): SolverResult | null {
+  return r as SolverResult | null
+}
+
 function useGenerateJob() {
-  const [jobId, setJobId] = useState<string | null>(null)
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle")
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<Record<string, unknown> | null>(null)
@@ -50,12 +62,11 @@ function useGenerateJob() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scope: "full" }),
       })
-      const data = await res.json()
+      const data = await res.json() as { job_id?: string; detail?: string }
 
       if (!res.ok) throw new Error(data.detail || "Generate failed")
 
-      const newJobId: string = data.job_id
-      setJobId(newJobId)
+      const newJobId: string = data.job_id ?? ""
       setJobStatus("running")
 
       // Simulated smooth progress from 5→90 while waiting for solver
@@ -63,17 +74,17 @@ function useGenerateJob() {
       pollRef.current = setInterval(async () => {
         try {
           const statusRes = await fetch(`${API_BASE}/schedule/generate/status/${newJobId}`)
-          const statusData = await statusRes.json()
+          const statusData = await statusRes.json() as { status: string; progress: number; result: Record<string, unknown> }
 
           // Blend real progress (0-100) with visual smoothing
-          const realProgress = statusData.progress as number
+          const realProgress = statusData.progress
           visual = Math.max(visual, Math.min(realProgress * 0.9 + 5, 92))
           setProgress(Math.round(visual))
 
           if (statusData.status === "done" || statusData.status === "error") {
             stopPolling()
             setProgress(100)
-            setJobStatus(statusData.status)
+            setJobStatus(statusData.status as JobStatus)
             setResult(statusData.result)
           }
         } catch {
@@ -102,8 +113,9 @@ function SolverProgressBar({ status, progress, result }: {
 }) {
   if (status === "idle") return null
 
-  const isSuccess = status === "done" && (result as any)?.status === "success"
-  const isError = status === "error" || ((result as any)?.status === "error")
+  const r = asSolverResult(result)
+  const isSuccess = status === "done" && r?.status === "success"
+  const isError = status === "error" || r?.status === "error"
   const isDone = status === "done"
 
   const phaseLabel =
@@ -114,8 +126,8 @@ function SolverProgressBar({ status, progress, result }: {
     progress < 90 ? "Writing schedule back…" :
     isDone
       ? isSuccess
-        ? `✓ Done — Quality Score: ${(result as any)?.quality_score ?? "—"}`
-        : `✗ ${(result as any)?.message ?? "Error"}`
+        ? `✓ Done — Quality Score: ${r?.quality_score ?? "—"}`
+        : `✗ ${r?.message ?? "Error"}`
       : "Finalising…"
 
   return (
@@ -143,7 +155,6 @@ function SolverProgressBar({ status, progress, result }: {
 // ─────────────────────────────────────────────────────────────
 export function DashboardRenderer({
   metrics,
-  courses,
   sections,
 }: {
   metrics: DashboardMetrics
@@ -166,11 +177,8 @@ export function DashboardRenderer({
   const { jobStatus, progress, result, startGenerate } = useGenerateJob()
   const isGenerating = jobStatus === "queued" || jobStatus === "running"
 
-  const qScore = result ? (result as any).quality_score ?? metrics.activeVersion.qualityScore : metrics.activeVersion.qualityScore
-  const solverStatusLabel =
-    jobStatus === "done"
-      ? (result as any)?.solver_status ?? "—"
-      : metrics.solverLabel
+  const solverResult = asSolverResult(result)
+  const qScore = solverResult?.quality_score ?? metrics.activeVersion.qualityScore
 
   useEffect(() => {
     const session = authService.getSession()
@@ -180,7 +188,7 @@ export function DashboardRenderer({
 
   // After a successful generate, refresh timetable entries
   useEffect(() => {
-    if (jobStatus === "done" && (result as any)?.status === "success") {
+    if (jobStatus === "done" && solverResult?.status === "success") {
       scheduleService.getEditorEntries().then(setTimetableEntries)
     }
   }, [jobStatus, result])
@@ -410,8 +418,8 @@ export function DashboardRenderer({
     }
   }
 
-  const isSuccess = jobStatus === "done" && (result as any)?.status === "success"
-  const isError = jobStatus === "error" || (jobStatus === "done" && (result as any)?.status === "error")
+  const isSuccess = jobStatus === "done" && solverResult?.status === "success"
+  const isError = jobStatus === "error" || (jobStatus === "done" && solverResult?.status === "error")
 
   return (
     <div className="space-y-6">
@@ -461,7 +469,7 @@ export function DashboardRenderer({
             },
             {
               label: "Solver Status",
-              value: (result as any)?.solver_status ?? "OPTIMAL",
+              value: solverResult?.solver_status ?? "OPTIMAL",
               sub: "OR-Tools CP-SAT",
               icon: Cpu,
               tone: "text-blue-300",
@@ -469,7 +477,7 @@ export function DashboardRenderer({
             },
             {
               label: "Slots Filled",
-              value: String((result as any)?.entries_generated ?? metrics.activeVersion.lockedSlots),
+              value: String(solverResult?.entries_generated ?? metrics.activeVersion.lockedSlots),
               sub: "Total timetable entries",
               icon: Layers,
               tone: "text-violet-300",
@@ -477,7 +485,7 @@ export function DashboardRenderer({
             },
             {
               label: "Generation Time",
-              value: (result as any)?.elapsed_ms ? `${(result as any).elapsed_ms}ms` : "< 30s",
+              value: solverResult?.elapsed_ms ? `${solverResult.elapsed_ms}ms` : "< 30s",
               sub: "Below target threshold",
               icon: Zap,
               tone: "text-amber-300",
@@ -511,7 +519,7 @@ export function DashboardRenderer({
               chose that room, faculty, and period.
             </p>
           </div>
-          {(result as any)?.solver_status && (
+          {solverResult?.solver_status && (
             <div className="ml-auto shrink-0">
               <CheckCircle2 className="size-6 text-emerald-400" />
             </div>
