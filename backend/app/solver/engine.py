@@ -63,14 +63,13 @@ def generate_timetable(department_id: str, version_id: str) -> dict:
     # List of tuples: (course_id, section_id, faculty_id, is_lab, course_obj)
     requests: list[tuple[str, str, str, bool, dict]] = []
     for c in courses:
-        # theory hours
+        # theory hours — one request per contact hour per section
         for _ in range(c.get("theoryHours", 0)):
             for sec_id in c.get("sectionIds", []):
                 requests.append((c["id"], sec_id, c["facultyId"], False, c))
-        # practical hours (labs)
-        for lab_pair_idx in range(c.get("practicalHours", 0) // 2):
+        # practical hours — 2 requests per pair (each represents one 1-hr period in the 2-hr block)
+        for _ in range(c.get("practicalHours", 0)):
             for sec_id in c.get("sectionIds", []):
-                # each practical = 2 consecutive periods (we note pair index)
                 requests.append((c["id"], sec_id, c["facultyId"], True, c))
 
     num_requests = len(requests)
@@ -178,28 +177,23 @@ def generate_timetable(department_id: str, version_id: str) -> dict:
             lab_pairs.setdefault(key, []).append(r_id)
 
     for (course_id, sec_id), pair_ids in lab_pairs.items():
-        if len(pair_ids) >= 2:
-            r_a, r_b = pair_ids[0], pair_ids[1]
-            # For each day, if r_a is in period P, r_b must be in period P+1
-            pair_ok_literals: list[cp_model.IntVar] = []
+        # Process pairs — every two consecutive lab requests must be in same room, consecutive periods
+        for i in range(0, len(pair_ids) - 1, 2):
+            r_a, r_b = pair_ids[i], pair_ids[i + 1]
+            # For each valid (day, timeslot, room) combo: if r_a is at (day, ts), r_b must be at (day, ts+1) same room
             for day_idx in range(num_days):
-                for ts_idx in range(num_timeslots - 1):  # -1 so ts_idx+1 is valid
+                for ts_idx in range(num_timeslots):  # includes last — r_b may not have ts+1, handled below
                     p_a = period_index(day_idx, ts_idx)
-                    p_b = period_index(day_idx, ts_idx + 1)
                     for rm_idx in range(num_rooms):
-                        # both labs must be in same room
-                        lit = model.NewBoolVar(f"lab_consec_{r_a}_{r_b}_{day_idx}_{ts_idx}_{rm_idx}")
-                        model.AddBoolAnd([
-                            schedules[(r_a, p_a, rm_idx)],
-                            schedules[(r_b, p_b, rm_idx)],
-                        ]).OnlyEnforceIf(lit)
-                        model.AddBoolOr([
-                            schedules[(r_a, p_a, rm_idx)].Not(),
-                            schedules[(r_b, p_b, rm_idx)].Not(),
-                        ]).OnlyEnforceIf(lit.Not())
-                        pair_ok_literals.append(lit)
-            if pair_ok_literals:
-                model.AddBoolOr(pair_ok_literals)
+                        var_a = schedules[(r_a, p_a, rm_idx)]
+                        if ts_idx < num_timeslots - 1:
+                            p_b = period_index(day_idx, ts_idx + 1)
+                            var_b = schedules[(r_b, p_b, rm_idx)]
+                            # If r_a is placed at (p_a, rm), then r_b must be at (p_b, rm)
+                            model.AddImplication(var_a, var_b)
+                        else:
+                            # Last timeslot — r_a cannot be placed here (no consecutive slot)
+                            model.Add(var_a == 0)
 
     # ── HC-13: Holiday-blocked days — block all slots on those days ──
     for day_idx, day_name in enumerate(weekdays):

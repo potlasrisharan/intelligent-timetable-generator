@@ -77,9 +77,9 @@ SEED_DATA = {
         {"id": "rm-101", "name": "A-101", "block": "Academic Block A", "capacity": 60, "roomType": "CLASSROOM", "utilization": 82},
         {"id": "rm-203", "name": "A-203", "block": "Academic Block A", "capacity": 48, "roomType": "CLASSROOM", "utilization": 68},
         {"id": "rm-305", "name": "B-305", "block": "Engineering Block", "capacity": 120, "roomType": "CLASSROOM", "utilization": 74},
-        {"id": "lab-ai", "name": "AI Lab", "block": "Innovation Center", "capacity": 36, "roomType": "LAB", "utilization": 86},
-        {"id": "lab-circuits", "name": "Circuits Lab", "block": "North Wing", "capacity": 32, "roomType": "LAB", "utilization": 71},
-        {"id": "lab-manufacturing", "name": "Manufacturing Lab", "block": "Central Labs", "capacity": 28, "roomType": "LAB", "utilization": 79},
+        {"id": "lab-ai", "name": "AI Lab", "block": "Innovation Center", "capacity": 60, "roomType": "LAB", "utilization": 86},
+        {"id": "lab-circuits", "name": "Circuits Lab", "block": "North Wing", "capacity": 60, "roomType": "LAB", "utilization": 71},
+        {"id": "lab-manufacturing", "name": "Manufacturing Lab", "block": "Central Labs", "capacity": 60, "roomType": "LAB", "utilization": 79},
     ],
     "sections": [
         {"id": "cse-3a", "name": "CSE 3A", "departmentId": "cse", "semester": 3, "studentCount": 54, "advisor": "Dr. Farhan Alam", "compactness": 87},
