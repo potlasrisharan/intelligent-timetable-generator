@@ -6,6 +6,17 @@ from ortools.sat.python import cp_model
 from ..store import store
 
 
+def _seed_list(key: str) -> list[dict]:
+    """
+    Always read from the in-memory seed store (store.fallback).
+    This guarantees the solver always sees canonical, internally-consistent data
+    regardless of what Supabase tables contain (which may be empty, stale, or
+    have the old lab capacities of 28/32/36).
+    """
+    src = store.fallback if hasattr(store, "fallback") else store
+    return src.list(key)
+
+
 def generate_timetable(department_id: str, version_id: str) -> dict:
     """
     Core solver logic using Google OR-Tools CP-SAT.
@@ -13,13 +24,23 @@ def generate_timetable(department_id: str, version_id: str) -> dict:
     """
     start_time = datetime.now()
 
-    rooms = store.list("rooms")
-    courses = store.list("courses")
-    faculty = store.list("faculty")
-    all_timeslots = store.list("timeslots")
+    # Use in-memory seed data (de-duplicated by ID) — never Supabase
+    def dedup(items: list[dict]) -> list[dict]:
+        seen: set[str] = set()
+        result = []
+        for item in items:
+            if item["id"] not in seen:
+                seen.add(item["id"])
+                result.append(item)
+        return result
+
+    rooms = dedup(_seed_list("rooms"))
+    courses = dedup(_seed_list("courses"))
+    faculty = dedup(_seed_list("faculty"))
+    all_timeslots = _seed_list("timeslots")
     timeslots = [t for t in all_timeslots if not t.get("isLunch")]
-    sections = store.list("sections")
-    holidays = store.list("holidays")
+    sections = dedup(_seed_list("sections"))
+    holidays = _seed_list("holidays")
 
     model = cp_model.CpModel()
 
