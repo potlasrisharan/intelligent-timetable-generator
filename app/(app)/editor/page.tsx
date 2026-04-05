@@ -6,18 +6,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { sections } from "@/lib/mock-data"
 import { scheduleService } from "@/lib/services/schedule-service"
+import { getJsonWithFallback } from "@/lib/services/api-client"
+import type { XaiEntry } from "@/components/shared/xai-panel"
 
 export default async function EditorPage() {
   const entries = await scheduleService.getEditorEntries()
   const lockedSlots = await scheduleService.getLockedSlots()
   const [activeSection] = sections
 
+  // Fetch XAI explanations from backend (fallback to empty array — UI still works)
+  const xaiData = await getJsonWithFallback<XaiEntry[]>("/schedule/explain", [])
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Scheduling / editor"
         title="Draft timetable editor"
-        description="Review section-level schedules, preserve locked decisions, and keep drag-and-drop space ready for backend-powered interactions."
+        description="Click any scheduled slot to reveal why OR-Tools placed it there — full constraint trace with XAI reasoning."
         actions={
           <>
             <StatusBadge tone="active">Editing {activeSection.name}</StatusBadge>
@@ -25,7 +30,7 @@ export default async function EditorPage() {
               <Lock className="size-4" />
               Show locked slots
             </Button>
-            <Button className="rounded-2xl">
+            <Button className="rounded-2xl bg-violet-600 text-white hover:bg-violet-500">
               <WandSparkles className="size-4" />
               Re-solve open slots
             </Button>
@@ -43,11 +48,12 @@ export default async function EditorPage() {
               </p>
             </div>
             <p className="text-sm text-slate-400">
-              Visual layout is already drag-and-drop friendly. Backend interactions can later attach directly to these slots.
+              Click any slot to open the{" "}
+              <span className="font-semibold text-violet-300">XAI Constraint Trace</span> — see exactly why OR-Tools chose that room, faculty, and period.
             </p>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <TimetableBoard entries={entries} sectionId={activeSection.id} />
+            <TimetableBoard entries={entries} sectionId={activeSection.id} xaiData={xaiData} />
           </CardContent>
         </Card>
 
@@ -71,6 +77,12 @@ export default async function EditorPage() {
                 <p className="font-medium text-amber-100">Locked slots must survive regeneration</p>
                 <p className="mt-2 text-sm leading-6 text-amber-50/80">
                   The current draft contains {lockedSlots.length} pinned decisions that the solver cannot relocate.
+                </p>
+              </div>
+              <div className="rounded-[1.15rem] border border-violet-500/20 bg-violet-500/10 p-4">
+                <p className="font-medium text-violet-100">XAI Transparency Active</p>
+                <p className="mt-2 text-sm leading-6 text-violet-50/80">
+                  Click any filled slot to see a live constraint-satisfaction trace explaining the solver&apos;s decision. Powered by Google OR-Tools CP-SAT.
                 </p>
               </div>
             </CardContent>
