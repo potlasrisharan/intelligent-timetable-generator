@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import {
   BookOpen, Calendar, CheckCircle2, Clock,
   Cpu, GitBranch, Upload, WandSparkles, Zap,
-  Brain, BarChart3, Layers,
+  Brain, BarChart3, Layers, GraduationCap,
 } from "lucide-react"
 
 import { PageHeader } from "@/components/shared/page-header"
@@ -162,10 +162,10 @@ export function DashboardRenderer({
   sections: Section[]
 }) {
   const [role, setRole] = useState<UserRole | null>(null)
-  const [userName, setUserName] = useState("")
+  const [userMeta, setUserMeta] = useState<{ name: string; sectionId?: string; facultyName?: string }>({ name: "" })
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
 
-  // Form State
+  // Admin-only form state
   const [roomName, setRoomName] = useState("")
   const [capacity, setCapacity] = useState("")
   const [targetBranch, setTargetBranch] = useState("")
@@ -180,107 +180,99 @@ export function DashboardRenderer({
   const solverResult = asSolverResult(result)
   const qScore = solverResult?.quality_score ?? metrics.activeVersion.qualityScore
 
+  // Read session once on mount
   useEffect(() => {
     const session = authService.getSession()
-    setRole(session.user?.role || "ADMIN")
-    setUserName(session.user?.name || "")
+    const user = session.user
+    setRole(user?.role || "ADMIN")
+    setUserMeta({
+      name: user?.name || "",
+      sectionId: user?.sectionId,
+      facultyName: user?.facultyName,
+    })
   }, [])
 
-  // After a successful generate, refresh timetable entries
+  // Always load timetable entries (needed for Teacher + Student views, and after generate)
+  useEffect(() => {
+    scheduleService.getEditorEntries().then(setTimetableEntries)
+  }, [])
+
+  // Refresh entries after a successful generate (Admin only)
   useEffect(() => {
     if (jobStatus === "done" && solverResult?.status === "success") {
       scheduleService.getEditorEntries().then(setTimetableEntries)
     }
   }, [jobStatus, result])
 
-  // Load entries on mount for Teacher/Student view
-  useEffect(() => {
-    if (role === "TEACHER" || role === "STUDENT") {
-      scheduleService.getEditorEntries().then(setTimetableEntries)
-    }
-  }, [role])
-
   if (!role) return null
 
-  // ── STUDENT VIEW ──────────────────────────────────────────
+  // ── STUDENT VIEW — read-only, section-filtered ────────────
   if (role === "STUDENT") {
-    // Show entries for cse-5a section (the "student" section in mock data)
-    const mySection = sections.find((s) => s.name.includes("5A")) ?? sections[0]
-    const myEntries = timetableEntries.filter((e) => e.sectionId === mySection?.id)
-    const hasSchedule = myEntries.length > 0 || metrics.activeVersion.status === "ACTIVE"
+    const mySectionId = userMeta.sectionId ?? "cse-3a"
+    const mySection = sections.find((s) => s.id === mySectionId) ?? sections[0]
+    const myEntries = timetableEntries
+      .filter((e) => e.sectionId === mySectionId)
+      .sort((a, b) => {
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
+        return days.indexOf(a.day) - days.indexOf(b.day)
+      })
+
+    const published = timetableEntries.length > 0 || metrics.activeVersion.status === "ACTIVE"
 
     return (
       <div className="space-y-6">
         <PageHeader
           eyebrow="Student Portal"
           title="My Timetable"
-          description="Your personally filtered schedule — only your section's classes shown."
-          actions={
-            <Button variant="outline" className="rounded-2xl border-white/8 bg-white/5 text-slate-100">
-              <Calendar className="size-4" />
-              Sync to Calendar
-            </Button>
-          }
+          description={`Showing classes for ${mySection?.name ?? mySectionId}. Contact your admin if the schedule looks incomplete.`}
         />
 
-        <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 text-center shadow-[0_0_40px_-10px_rgba(16,185,129,0.15)] ring-1 ring-white/5">
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">Computer Science Engineering</h2>
-          <p className="font-data text-sm uppercase tracking-[0.2em] text-emerald-300">
-            Section: {mySection?.name} (Core Batch)
-          </p>
+        {/* Identity banner */}
+        <div className="flex items-center gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/8 p-5 ring-1 ring-white/5">
+          <GraduationCap className="size-8 shrink-0 text-emerald-300" />
+          <div>
+            <p className="font-semibold text-white">{userMeta.name}</p>
+            <p className="text-sm text-emerald-300">{mySection?.name} · Semester {mySection?.semester} · {mySection?.advisor}</p>
+          </div>
+          <StatusBadge tone="healthy">
+            {myEntries.length} classes this week
+          </StatusBadge>
         </div>
 
-        <Card className="glass-panel section-ring mt-6 rounded-[1.5rem]">
+        <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader>
             <CardTitle className="text-xl text-white">This Week&apos;s Schedule</CardTitle>
+            <p className="text-sm text-slate-400">All classes assigned to your section by the OR-Tools scheduler.</p>
           </CardHeader>
           <CardContent>
-            {hasSchedule ? (
-              <div className="space-y-3">
-                {myEntries.length > 0 ? (
-                  myEntries.slice(0, 8).map((entry) => (
-                    <div key={entry.id} className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
-                      <div className="w-20 font-data text-xs text-slate-400">
-                        {entry.day}<br />
-                        <span className="uppercase">{entry.timeslotId}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-white">{entry.courseName}</h4>
-                        <p className="text-sm text-slate-400">Inst: {entry.facultyName} · Room: {entry.roomName}</p>
-                      </div>
-                      <StatusBadge tone={entry.type === "LAB" ? "active" : "healthy"}>
-                        {entry.type}
-                      </StatusBadge>
+            {published && myEntries.length > 0 ? (
+              <div className="space-y-2">
+                {myEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
+                    <div className="w-24 shrink-0">
+                      <p className="font-semibold text-white text-sm">{entry.day}</p>
+                      <p className="font-data text-xs uppercase text-slate-400">{entry.timeslotId}</p>
                     </div>
-                  ))
-                ) : (
-                  // Default demo entries for student view
-                  <>
-                    <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
-                      <div className="w-16 font-data text-xs text-slate-400">Mon<br />09:30</div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-white">Machine Learning</h4>
-                        <p className="text-sm text-slate-400">Inst: Dr. Farhan Alam · Room: A-101</p>
-                      </div>
-                      <StatusBadge tone="healthy">Theory</StatusBadge>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white truncate">{entry.courseName}</p>
+                      <p className="text-sm text-slate-400">
+                        {entry.facultyName} &middot; Room: {entry.roomName}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
-                      <div className="w-16 font-data text-xs text-slate-400">Wed<br />13:20</div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-white">ML Lab</h4>
-                        <p className="text-sm text-slate-400">Inst: Dr. Farhan Alam · Room: AI Lab</p>
-                      </div>
-                      <StatusBadge tone="active">Lab</StatusBadge>
-                    </div>
-                  </>
-                )}
+                    <StatusBadge tone={entry.type === "LAB" ? "active" : "healthy"}>
+                      {entry.type}
+                    </StatusBadge>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="py-12 text-center">
+              <div className="py-16 text-center">
                 <Calendar className="mx-auto size-12 text-slate-600 mb-4" />
-                <h3 className="text-lg font-medium text-slate-300">Timetable Not Published Yet</h3>
-                <p className="text-sm text-slate-500 max-w-sm mx-auto mt-2">
-                  The administration is preparing the schedule. Check back later.
+                <h3 className="text-lg font-medium text-slate-300">
+                  {published ? "No classes assigned to your section yet" : "Timetable Not Published Yet"}
+                </h3>
+                <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">
+                  The admin needs to generate the schedule first. Check back shortly.
                 </p>
               </div>
             )}
@@ -290,29 +282,43 @@ export function DashboardRenderer({
     )
   }
 
-  // ── TEACHER VIEW ──────────────────────────────────────────
+  // ── TEACHER VIEW — read-only, faculty-filtered ────────────
   if (role === "TEACHER") {
-    const myEntries = timetableEntries.filter((e) =>
-      e.facultyName.toLowerCase().includes((userName.split(" ").slice(-1)[0] || "sara").toLowerCase())
-    )
-    const hasSchedule = myEntries.length > 0 || metrics.activeVersion.status === "ACTIVE"
-    const weeklyHours = myEntries.length
+    const myFacultyName = userMeta.facultyName ?? userMeta.name
+    const myEntries = timetableEntries
+      .filter((e) => e.facultyName === myFacultyName)
+      .sort((a, b) => {
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
+        return days.indexOf(a.day) - days.indexOf(b.day)
+      })
+
     const uniqueDays = new Set(myEntries.map((e) => e.day)).size
+    const labCount = myEntries.filter((e) => e.type === "LAB").length
+    const theoryCount = myEntries.filter((e) => e.type === "THEORY").length
 
     return (
       <div className="space-y-6">
         <PageHeader
           eyebrow="Teacher Portal"
           title="My Schedule"
-          description="Your personally assigned classes filtered by the solver. Contact admin to adjust availability."
+          description="Your assigned classes. Contact admin to update availability or request slot changes."
         />
+
+        {/* Identity banner */}
+        <div className="flex items-center gap-4 rounded-2xl border border-blue-500/20 bg-blue-500/8 p-5 ring-1 ring-white/5">
+          <BookOpen className="size-8 shrink-0 text-blue-300" />
+          <div>
+            <p className="font-semibold text-white">{userMeta.name}</p>
+            <p className="text-sm text-blue-300">{userMeta.name.replace("Prof. ", "").replace("Dr. ", "")} · {userMeta.name.startsWith("Dr.") ? "Professor" : "Associate Professor"} · {userMeta.name && "Computer Science"}</p>
+          </div>
+        </div>
 
         {/* Quick stats */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: "Weekly Classes", value: weeklyHours || "12", icon: BookOpen },
-            { label: "Active Days", value: uniqueDays || "4", icon: Calendar },
-            { label: "Weekly Load hrs", value: "14", icon: Clock },
+            { label: "Total Classes", value: myEntries.length || "—", icon: BookOpen },
+            { label: "Active Days", value: uniqueDays || "—", icon: Calendar },
+            { label: "Lab Sessions", value: labCount || "—", icon: Clock },
           ].map(({ label, value, icon: Icon }) => (
             <Card key={label} className="glass-panel section-ring rounded-2xl">
               <CardContent className="flex items-center gap-3 p-5">
@@ -329,47 +335,39 @@ export function DashboardRenderer({
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader>
             <CardTitle className="text-xl text-white">Assigned Classes</CardTitle>
+            <p className="text-sm text-slate-400">
+              {theoryCount} theory · {labCount} lab periods assigned by the scheduler.
+            </p>
           </CardHeader>
           <CardContent>
-            {hasSchedule ? (
-              <div className="space-y-3">
-                {myEntries.length > 0 ? (
-                  myEntries.map((entry) => (
-                    <div key={entry.id} className="flex flex-col gap-4 rounded-2xl border border-white/8 bg-white/4 p-5 md:flex-row md:items-center">
-                      <div className="w-20 font-data text-xs text-slate-400">
-                        {entry.day}<br />
-                        <span className="uppercase">{entry.timeslotId}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-white">{entry.courseName}</h4>
-                        <div className="mt-1 flex items-center gap-2 text-sm text-slate-400">
-                          <span className="rounded bg-white/10 px-2 py-0.5 text-slate-200">Room: {entry.roomName}</span>
-                          <span>Section: {entry.sectionId}</span>
-                        </div>
-                      </div>
-                      <StatusBadge tone={entry.type === "LAB" ? "active" : "healthy"}>
-                        {entry.type}
-                      </StatusBadge>
+            {myEntries.length > 0 ? (
+              <div className="space-y-2">
+                {myEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-center gap-4 rounded-2xl border border-white/8 bg-white/4 p-4">
+                    <div className="w-24 shrink-0">
+                      <p className="font-semibold text-white text-sm">{entry.day}</p>
+                      <p className="font-data text-xs uppercase text-slate-400">{entry.timeslotId}</p>
                     </div>
-                  ))
-                ) : (
-                  // Default demo for teacher view
-                  <div className="flex flex-col gap-4 rounded-2xl border border-white/8 bg-white/4 p-5 md:flex-row md:items-center">
-                    <div className="w-16 font-data text-xs text-slate-400">Mon<br />09:30</div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-white">Web Application Development Lab</h4>
-                      <div className="mt-1 flex items-center gap-2 text-sm text-slate-400">
-                        <span className="rounded bg-white/10 px-2 py-0.5 text-slate-200">Room: B115</span>
-                        <span>Target: CSE 3A (AIML Block)</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white truncate">{entry.courseName}</p>
+                      <div className="flex items-center gap-2 text-sm text-slate-400 mt-0.5">
+                        <span className="rounded bg-white/10 px-2 py-0.5 text-slate-200 text-xs">{entry.roomName}</span>
+                        <span>Section: {entry.sectionId.toUpperCase()}</span>
                       </div>
                     </div>
+                    <StatusBadge tone={entry.type === "LAB" ? "active" : "healthy"}>
+                      {entry.type}
+                    </StatusBadge>
                   </div>
-                )}
+                ))}
               </div>
             ) : (
-              <div className="py-12 text-center">
+              <div className="py-16 text-center">
                 <Calendar className="mx-auto size-12 text-slate-600 mb-4" />
-                <h3 className="text-lg font-medium text-slate-300">Timetable Not Published Yet</h3>
+                <h3 className="text-lg font-medium text-slate-300">No classes assigned yet</h3>
+                <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">
+                  The admin hasn&apos;t generated the timetable yet. You&apos;ll see your classes here once it&apos;s done.
+                </p>
               </div>
             )}
           </CardContent>

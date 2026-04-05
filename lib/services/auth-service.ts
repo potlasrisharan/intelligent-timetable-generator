@@ -29,18 +29,30 @@ export const authService = {
   },
 
   async signIn(email: string, password?: string) {
-    const mockRoleMap: Record<string, typeof demoUser["role"]> = {
-      "admin@sau.edu": "ADMIN",
-      "teacher@sau.edu": "TEACHER",
-      "student@sau.edu": "STUDENT",
+    // Maps demo credentials to real identities in the seed data
+    const identityMap: Record<string, Partial<typeof demoUser> & { sectionId?: string; facultyName?: string }> = {
+      "admin@sau.edu": {
+        role: "ADMIN",
+        name: "Ayesha Rahman",
+        department: "University Scheduling Office",
+      },
+      "teacher@sau.edu": {
+        role: "TEACHER",
+        name: "Prof. Sara Joseph",
+        department: "Computer Science",
+        facultyName: "Prof. Sara Joseph",  // exact match against timetable entries
+      },
+      "student@sau.edu": {
+        role: "STUDENT",
+        name: "Student (CSE 3A)",
+        department: "Computer Science",
+        sectionId: "cse-3a",               // exact match against timetable entries
+      },
     }
 
-    const fallbackUser = {
-      ...demoUser,
-      email: email || demoUser.email,
-      role: mockRoleMap[email] || "ADMIN",
-      name: email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1),
-    }
+    const identity = identityMap[email] ?? { role: "ADMIN" as const, name: email.split("@")[0] }
+    const fallbackUser = { ...demoUser, email, ...identity }
+
     const user = await postJsonWithFallback("/auth/sign-in", { email, password }, fallbackUser)
 
     if (typeof window !== "undefined") {
@@ -49,6 +61,7 @@ export const authService = {
 
     return user
   },
+
 
   async signOut() {
     if (typeof window !== "undefined") {

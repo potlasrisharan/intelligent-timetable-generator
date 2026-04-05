@@ -179,7 +179,11 @@ export type AuthUser = {
   email: string
   role: UserRole
   department: string
+  // Role-specific identity fields for timetable filtering
+  sectionId?: string      // STUDENT: their section id  e.g. "cse-3a"
+  facultyName?: string    // TEACHER: their exact faculty name e.g. "Prof. Sara Joseph"
 }
+
 
 export type SessionState = {
   status: "loading" | "authenticated" | "unauthenticated"
