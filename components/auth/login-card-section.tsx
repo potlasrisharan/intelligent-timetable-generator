@@ -145,7 +145,17 @@ export function LoginCardSection({ nextPath }: { nextPath: string }) {
               onClick={async () => {
                 setSubmitting(true)
                 await authService.signIn(email, password)
-                router.push(nextPath)
+                // Read back from localStorage — authService always writes the
+                // correct identity-mapped role, regardless of backend response.
+                const session = authService.getSession()
+                const role = session.user?.role
+                if (role === "TEACHER") {
+                  router.push("/teacher-dashboard")
+                } else if (role === "STUDENT") {
+                  router.push("/student-dashboard")
+                } else {
+                  router.push(nextPath || "/dashboard")
+                }
               }}
             >
               {submitting ? "Preparing workspace..." : "Continue to dashboard"}

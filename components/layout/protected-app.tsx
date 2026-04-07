@@ -8,6 +8,12 @@ import { authService } from "@/lib/services/auth-service"
 import type { SessionState } from "@/lib/types"
 import { AppShell } from "@/components/layout/app-shell"
 
+const ROLE_HOME: Record<string, string> = {
+  ADMIN: "/dashboard",
+  TEACHER: "/teacher-dashboard",
+  STUDENT: "/student-dashboard",
+}
+
 export function ProtectedApp({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -22,6 +28,30 @@ export function ProtectedApp({ children }: { children: ReactNode }) {
 
     if (currentSession.status === "unauthenticated") {
       router.replace(`/auth/login?next=${encodeURIComponent(pathname)}`)
+      return
+    }
+
+    if (currentSession.status === "authenticated" && currentSession.user) {
+      const role = currentSession.user.role
+      const home = ROLE_HOME[role] ?? "/dashboard"
+
+      // Enforce role-locked routes
+      const adminOnly = pathname === "/dashboard"
+      const teacherOnly = pathname === "/teacher-dashboard"
+      const studentOnly = pathname === "/student-dashboard"
+
+      if (adminOnly && role !== "ADMIN") {
+        router.replace(home)
+        return
+      }
+      if (teacherOnly && role !== "TEACHER") {
+        router.replace(home)
+        return
+      }
+      if (studentOnly && role !== "STUDENT") {
+        router.replace(home)
+        return
+      }
     }
   }, [pathname, router])
 

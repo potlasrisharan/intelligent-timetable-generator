@@ -53,13 +53,17 @@ export const authService = {
     const identity = identityMap[email] ?? { role: "ADMIN" as const, name: email.split("@")[0] }
     const fallbackUser = { ...demoUser, email, ...identity }
 
-    const user = await postJsonWithFallback("/auth/sign-in", { email, password }, fallbackUser)
+    // Call the backend (if configured) but ALWAYS persist the locally-computed
+    // identity. The backend's /auth/sign-in may return a hardcoded ADMIN role,
+    // so we never let it override our role mapping.
+    await postJsonWithFallback("/auth/sign-in", { email, password }, fallbackUser)
+    const sessionUser = fallbackUser
 
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(SESSION_KEY, JSON.stringify(user))
+      window.localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser))
     }
 
-    return user
+    return sessionUser
   },
 
 
