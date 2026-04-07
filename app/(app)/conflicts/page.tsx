@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ConflictList } from "@/components/conflicts/conflict-list"
 import { scheduleService } from "@/lib/services/schedule-service"
 
 export default async function ConflictsPage() {
@@ -26,50 +27,7 @@ export default async function ConflictsPage() {
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.22fr_0.78fr]">
-        <div className="space-y-5">
-          {conflicts.map((conflict) => (
-            <Card key={conflict.id} className="glass-panel section-ring rounded-[1.5rem]">
-              <CardHeader className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-xl text-white">{conflict.title}</CardTitle>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{conflict.description}</p>
-                  </div>
-                  <StatusBadge tone={conflict.severity === "critical" ? "critical" : conflict.severity === "high" ? "warning" : "active"}>
-                    {conflict.severity}
-                  </StatusBadge>
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-                <div className="rounded-[1.2rem] border border-white/8 bg-white/4 p-4">
-                  <p className="font-data text-[0.7rem] uppercase tracking-[0.24em] text-slate-500">
-                    Rule code
-                  </p>
-                  <p className="mt-3 text-lg font-semibold text-white">{conflict.ruleCode}</p>
-                  <div className="mt-4 space-y-2">
-                    {conflict.affected.map((item) => (
-                      <div key={item} className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-slate-300">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {conflict.suggestedFixes.map((fix) => (
-                    <div key={fix} className="rounded-[1.2rem] border border-slate-300/14 bg-slate-300/8 p-4">
-                      <p className="text-sm font-medium text-white">{fix}</p>
-                    </div>
-                  ))}
-                  <div className="rounded-[1.2rem] border border-amber-300/16 bg-amber-300/10 p-4">
-                    <p className="text-sm font-medium text-amber-100">
-                      Estimated quality impact: {conflict.qualityImpact} points
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <ConflictList initialConflicts={conflicts} />
 
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader className="space-y-2">

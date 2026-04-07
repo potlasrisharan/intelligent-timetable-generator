@@ -155,6 +155,7 @@ function SolverProgressBar({ status, progress, result }: {
 // ─────────────────────────────────────────────────────────────
 export function DashboardRenderer({
   metrics,
+  courses,
   sections,
 }: {
   metrics: DashboardMetrics
@@ -166,11 +167,16 @@ export function DashboardRenderer({
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
 
   // Admin-only form state
+  const [entryMode, setEntryMode] = useState<"infrastructure" | "course">("infrastructure")
   const [roomName, setRoomName] = useState("")
   const [capacity, setCapacity] = useState("")
   const [targetBranch, setTargetBranch] = useState("")
   const [sectionName, setSectionName] = useState("")
   const [studentCount, setStudentCount] = useState("")
+  const [courseCode, setCourseCode] = useState("")
+  const [courseName, setCourseName] = useState("")
+  const [theoryHours, setTheoryHours] = useState("")
+  const [facultyName, setFacultyName] = useState("")
   const [poolItems, setPoolItems] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -397,17 +403,28 @@ export function DashboardRenderer({
 
   const handleManualSubmit = async () => {
     const formData = new FormData()
-    if (roomName) formData.append("room_name", roomName)
-    if (capacity) formData.append("capacity", capacity)
-    if (targetBranch) formData.append("target_branch", targetBranch)
-    if (sectionName) formData.append("section_name", sectionName)
-    if (studentCount) formData.append("student_count", studentCount)
+    if (entryMode === "infrastructure") {
+      if (roomName) formData.append("room_name", roomName)
+      if (capacity) formData.append("capacity", capacity)
+      if (targetBranch) formData.append("target_branch", targetBranch)
+      if (sectionName) formData.append("section_name", sectionName)
+      if (studentCount) formData.append("student_count", studentCount)
+    } else {
+      if (courseCode) formData.append("course_code", courseCode)
+      if (courseName) formData.append("course_name", courseName)
+      if (theoryHours) formData.append("theory_hours", theoryHours)
+      if (facultyName) formData.append("faculty_name", facultyName)
+      if (targetBranch) formData.append("target_branch", targetBranch)
+      if (sectionName) formData.append("section_name", sectionName)
+    }
+    
     try {
       const res = await fetch(`${API_BASE}/import/manual`, { method: "POST", body: formData })
       const data = await res.json()
       if (res.ok) {
         setPoolItems((prev) => [...prev, data.message])
         setRoomName(""); setCapacity(""); setTargetBranch(""); setSectionName(""); setStudentCount("")
+        setCourseCode(""); setCourseName(""); setTheoryHours(""); setFacultyName("")
       } else {
         alert(`Error: ${data.detail || "Failed"}`)
       }
@@ -509,7 +526,7 @@ export function DashboardRenderer({
         <div className="flex items-start gap-4 rounded-2xl border border-violet-500/25 bg-violet-500/10 p-5 ring-1 ring-white/5">
           <Brain className="mt-0.5 size-5 shrink-0 text-violet-300" />
           <div>
-            <p className="font-semibold text-violet-100">XAI Transparency Ready</p>
+             <p className="font-semibold text-violet-100">XAI Transparency Ready</p>
             <p className="mt-1 text-sm text-violet-100/70">
               The timetable has been generated. Navigate to the{" "}
               <a href="/editor" className="underline text-violet-300 hover:text-violet-200">Editor</a>{" "}
@@ -531,7 +548,7 @@ export function DashboardRenderer({
           <CardHeader>
             <CardTitle className="text-xl text-white">Bulk Configuration Upload</CardTitle>
             <CardDescription className="text-slate-400">
-              Upload CSV files containing subjects, faculty mapping, and section targets.
+               Upload CSV files containing subjects, faculty mapping, and section targets.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -562,37 +579,91 @@ export function DashboardRenderer({
         {/* Manual Input */}
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader>
-            <CardTitle className="text-xl text-white">Manual Capacity Input</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl text-white">Manual Database Entry</CardTitle>
+              <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg">
+                <button
+                  onClick={() => setEntryMode("infrastructure")}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${entryMode === "infrastructure" ? "bg-white/10 text-white font-semibold" : "text-slate-400 hover:text-slate-300"}`}
+                >
+                  Rooms & Sections
+                </button>
+                <button
+                  onClick={() => setEntryMode("course")}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${entryMode === "course" ? "bg-white/10 text-white font-semibold" : "text-slate-400 hover:text-slate-300"}`}
+                >
+                  Classes (Courses)
+                </button>
+              </div>
+            </div>
             <CardDescription className="text-slate-400">
-              Explicitly define classrooms and section branch details.
+              {entryMode === "infrastructure" ? "Explicitly define classrooms and section branch details." : "Add a subject explicitly mapped to a teacher and section."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-400">Classroom Identifier</Label>
-                  <Input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder="e.g. A-101" className="border-white/10 bg-white/5 text-slate-100" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-400">Student Capacity</Label>
-                  <Input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="60" className="border-white/10 bg-white/5 text-slate-100" />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-400">Target Branch</Label>
-                  <Input value={targetBranch} onChange={(e) => setTargetBranch(e.target.value)} placeholder="e.g. CSE" className="border-white/10 bg-white/5 text-slate-100" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-400">Assigned Section</Label>
-                  <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} placeholder="e.g. 5A" className="border-white/10 bg-white/5 text-slate-100" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-slate-400">Student Count</Label>
-                  <Input type="number" value={studentCount} onChange={(e) => setStudentCount(e.target.value)} placeholder="54" className="border-white/10 bg-white/5 text-slate-100" />
-                </div>
-              </div>
+              {entryMode === "infrastructure" ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Classroom Identifier</Label>
+                      <Input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder="e.g. A-101" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Student Capacity</Label>
+                      <Input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="60" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Target Branch</Label>
+                      <Input value={targetBranch} onChange={(e) => setTargetBranch(e.target.value)} placeholder="e.g. CSE" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Assigned Section</Label>
+                      <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} placeholder="e.g. 5A" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Student Count</Label>
+                      <Input type="number" value={studentCount} onChange={(e) => setStudentCount(e.target.value)} placeholder="54" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Course Code</Label>
+                      <Input value={courseCode} onChange={(e) => setCourseCode(e.target.value)} placeholder="e.g. CS301" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Course Name</Label>
+                      <Input value={courseName} onChange={(e) => setCourseName(e.target.value)} placeholder="e.g. Algorithms" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Faculty Name</Label>
+                      <Input value={facultyName} onChange={(e) => setFacultyName(e.target.value)} placeholder="e.g. Prof. Sara Joseph" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Theory Hours / Week</Label>
+                      <Input type="number" value={theoryHours} onChange={(e) => setTheoryHours(e.target.value)} placeholder="3" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Target Branch</Label>
+                      <Input value={targetBranch} onChange={(e) => setTargetBranch(e.target.value)} placeholder="e.g. CSE" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-400">Target Section</Label>
+                      <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} placeholder="e.g. cse-3a" className="border-white/10 bg-white/5 text-slate-100" />
+                    </div>
+                  </div>
+                </>
+              )}
+              
               <Button onClick={handleManualSubmit} variant="secondary" className="w-full rounded-xl bg-white/10 text-white hover:bg-white/20">
                 Add to Generation Pool
               </Button>

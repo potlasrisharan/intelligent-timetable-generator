@@ -80,11 +80,15 @@ async def import_manual(
     capacity: Optional[int] = Form(None),
     target_branch: Optional[str] = Form(None),
     section_name: Optional[str] = Form(None),
-    student_count: Optional[int] = Form(None)
+    student_count: Optional[int] = Form(None),
+    course_code: Optional[str] = Form(None),
+    course_name: Optional[str] = Form(None),
+    theory_hours: Optional[int] = Form(None),
+    faculty_name: Optional[str] = Form(None)
 ):
     """
     Accept manual form inputs from the Admin Dashboard.
-    Creates rooms and sections simultaneously for immediate constraint solving.
+    Creates rooms, sections, and courses simultaneously for immediate constraint solving.
     """
     added = []
     if room_name and capacity:
@@ -110,6 +114,22 @@ async def import_manual(
             "compactness" : 100
         })
         added.append(f"Section {section_name}")
+
+    if course_code and course_name and theory_hours:
+        store.create("courses", {
+             "id": f"crs-{uuid.uuid4().hex[:6]}",
+             "code": course_code,
+             "name": course_name,
+             "department_id": str(target_branch).lower() if target_branch else "cse",
+             "semester": 1,
+             "theory_hours": int(theory_hours),
+             "practical_hours": 0,
+             "lab_required": False,
+             "faculty_id": faculty_name or "fac-001",
+             "section_ids": [section_name] if section_name else [],
+             "status": "scheduled"
+        })
+        added.append(f"Course {course_code}")
 
     if not added:
         raise HTTPException(status_code=400, detail="No valid data provided.")
