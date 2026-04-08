@@ -1,7 +1,8 @@
 import csv
-from io import StringIO
+from io import BytesIO, StringIO
 from fastapi import APIRouter
 from fastapi.responses import Response
+from reportlab.pdfgen import canvas
 from ..store import store
 
 router = APIRouter(prefix="/export", tags=["export"])
@@ -9,12 +10,37 @@ router = APIRouter(prefix="/export", tags=["export"])
 @router.get("/pdf")
 def export_pdf(version_id: str):
     """
-    Generate mock PDF payload.
+    Generate valid PDF payload using ReportLab.
     Following PRD Section 13.2 specification.
     """
-    content = f"%PDF-1.4\\n1 0 obj << /Title (Timetable {version_id}) >> endobj\\n%EOF"
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(100, 800, f"Timetable Export - Version: {version_id}")
+    
+    p.setFont("Helvetica", 12)
+    p.drawString(100, 770, "Dynamically generated schedule bundle from TimeTable X")
+    
+    entries = store.fallback.list("editorEntries") if hasattr(store, "fallback") else store.list("editorEntries")
+    
+    y = 730
+    for e in entries[:60]:
+        text = f"{e.get('day')} | {e.get('timeslotId').upper()} | {e.get('courseCode')} | {e.get('facultyName')} | {e.get('roomName')}"
+        p.drawString(100, y, text)
+        y -= 20
+        if y < 50:
+            p.showPage()
+            p.setFont("Helvetica", 12)
+            y = 800
+            
+    p.showPage()
+    p.save()
+    
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+
     return Response(
-        content=content,
+        content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="timetable_{version_id}.pdf"'}
     )
