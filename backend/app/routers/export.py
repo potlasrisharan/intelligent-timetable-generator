@@ -2,7 +2,10 @@ import csv
 from io import BytesIO, StringIO
 from fastapi import APIRouter
 from fastapi.responses import Response
-from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 from ..store import store
 
 router = APIRouter(prefix="/export", tags=["export"])
@@ -14,27 +17,53 @@ def export_pdf(version_id: str):
     Following PRD Section 13.2 specification.
     """
     buffer = BytesIO()
-    p = canvas.Canvas(buffer)
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(100, 800, f"Timetable Export - Version: {version_id}")
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
     
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 770, "Dynamically generated schedule bundle from TimeTable X")
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Title
+    elements.append(Paragraph(f"Timetable Export - Version: {version_id}", styles['Title']))
+    elements.append(Paragraph("Dynamically generated schedule bundle from TimeTable X", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Table Data
+    data = [["Day", "Time", "Course", "Section", "Faculty", "Room", "Type"]]
     
     entries = store.fallback.list("editorEntries") if hasattr(store, "fallback") else store.list("editorEntries")
     
-    y = 730
-    for e in entries[:60]:
-        text = f"{e.get('day')} | {e.get('timeslotId').upper()} | {e.get('courseCode')} | {e.get('facultyName')} | {e.get('roomName')}"
-        p.drawString(100, y, text)
-        y -= 20
-        if y < 50:
-            p.showPage()
-            p.setFont("Helvetica", 12)
-            y = 800
-            
-    p.showPage()
-    p.save()
+    for e in entries:
+        data.append([
+            e.get('day', ''),
+            e.get('timeslotId', '').upper(),
+            e.get('courseCode', ''),
+            e.get('sectionId', '').upper(),
+            e.get('facultyName', ''),
+            e.get('roomName', ''),
+            e.get('type', '')
+        ])
+    
+    if len(data) > 1:
+        t = Table(data, colWidths=[40, 40, 60, 60, 130, 120, 60])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#4f46e5")),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey])
+        ]))
+        elements.append(t)
+    else:
+        elements.append(Paragraph("No schedule entries found for this version.", styles['Normal']))
+        
+    doc.build(elements)
     
     pdf_bytes = buffer.getvalue()
     buffer.close()
