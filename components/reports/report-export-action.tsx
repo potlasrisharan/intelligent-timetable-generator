@@ -14,8 +14,22 @@ export function ReportExportAction({ label }: { label: string }) {
     
     try {
       const res = await fetch(`${envConfig.apiBaseUrl}/export/${type}?version_id=latest`)
-      const data = await res.json()
-      alert(data.message || `Exported ${label} successfully.`)
+      const contentType = res.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json()
+        alert(data.message || `Exported ${label} successfully.`)
+        return
+      }
+
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `timetable_export_${label.replace(/\s+/g, '_').toLowerCase()}.${type === "excel" ? "csv" : "pdf"}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
     } catch (e) {
       alert(`Network error exporting ${label}`)
     } finally {

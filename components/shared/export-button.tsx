@@ -13,8 +13,23 @@ export function ExportTimetableButton() {
     setIsExporting(true)
     try {
       const res = await fetch(`${envConfig.apiBaseUrl}/export/${type}?version_id=latest`)
-      const data = await res.json()
-      alert(data.message || `Exported to ${type.toUpperCase()} successfully.`)
+      
+      const contentType = res.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json()
+        alert(data.message || `Exported to ${type.toUpperCase()} successfully.`)
+        return
+      }
+
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `timetable_export.${type === "excel" ? "csv" : "pdf"}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
     } catch (e) {
       alert(`Network error exporting ${type.toUpperCase()}`)
     } finally {
