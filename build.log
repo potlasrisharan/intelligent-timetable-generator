@@ -1,0 +1,2 @@
+rm: components/dashboard/.run: No such file or directory
+rm: build: No such file or directory

@@ -17,6 +17,7 @@ import { authService } from "@/lib/services/auth-service"
 import type { DashboardMetrics, Course, Section, UserRole, TimetableEntry } from "@/lib/types"
 import { envConfig } from "@/lib/config"
 import { scheduleService } from "@/lib/services/schedule-service"
+import { ExportTimetableButton } from "@/components/shared/export-button"
 
 const API_BASE = envConfig.apiBaseUrl
 
@@ -231,6 +232,7 @@ export function DashboardRenderer({
           eyebrow="Student Portal"
           title="My Timetable"
           description={`Showing classes for ${mySection?.name ?? mySectionId}. Contact your admin if the schedule looks incomplete.`}
+          actions={<ExportTimetableButton />}
         />
 
         {/* Identity banner */}
@@ -308,6 +310,7 @@ export function DashboardRenderer({
           eyebrow="Teacher Portal"
           title="My Schedule"
           description="Your assigned classes. Contact admin to update availability or request slot changes."
+          actions={<ExportTimetableButton />}
         />
 
         {/* Identity banner */}

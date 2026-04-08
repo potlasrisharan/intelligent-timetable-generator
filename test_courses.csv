@@ -1,0 +1,5 @@
+code,name,department_id,semester,theory_hours,practical_hours,faculty_id,section_ids
+CS601,Deep Learning,cse,6,3,2,fac-001,cse-5a
+CS602,Cloud Computing,cse,6,3,0,fac-002,cse-5a
+EE601,Embedded Systems,ece,6,3,2,fac-004,ece-5a
+ME601,Robotics,me,6,2,2,fac-005,me-3a

@@ -13,6 +13,7 @@ from ..models import (
     ResolveConflictRequest,
     TimetableEntry,
     TimetableVersion,
+    ManualEntryRequest,
 )
 from ..store import store
 from ..solver.engine import generate_timetable
@@ -117,3 +118,26 @@ def resolve_conflict(conflict_id: str, payload: ResolveConflictRequest) -> Confl
         return Conflict.model_validate(store.resolve_conflict(conflict_id, payload.resolution))
     except KeyError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+
+@router.post("/manual-entry", response_model=TimetableEntry)
+def add_manual_entry(payload: ManualEntryRequest) -> TimetableEntry:
+    entry_dict = {
+        "id": f"evt-man-{uuid.uuid4().hex[:8]}",
+        "day": payload.day,
+        "timeslotId": payload.timeslotId,
+        "sectionId": payload.sectionId,
+        "courseCode": payload.courseCode,
+        "courseName": payload.courseName,
+        "facultyName": payload.facultyName,
+        "roomName": payload.roomName,
+        "type": payload.type,
+        "locked": True,
+        "combined": False,
+        "note": "Manually assigned block",
+        "_xai_reason": "Slot added manually via the Add Class UI.",
+    }
+    # Add to the global store entries
+    store.fallback.data.setdefault("editorEntries", []).append(entry_dict)
+    
+    return TimetableEntry.model_validate(entry_dict)

@@ -231,3 +231,15 @@ class DeleteResponse(BaseModel):
 
 class GenericMutationPayload(BaseModel):
     data: dict[str, Any]
+
+
+class ManualEntryRequest(BaseModel):
+    day: str
+    timeslotId: str
+    sectionId: str
+    courseCode: str
+    courseName: str
+    facultyName: str
+    roomName: str
+    type: Literal["THEORY", "LAB"]
+

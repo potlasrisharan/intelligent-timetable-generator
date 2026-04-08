@@ -1,4 +1,4 @@
-import { Lock, PenTool, WandSparkles } from "lucide-react"
+import { Lock, PenTool } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { TimetableBoard } from "@/components/shared/timetable-board"
@@ -8,6 +8,7 @@ import { sections } from "@/lib/mock-data"
 import { scheduleService } from "@/lib/services/schedule-service"
 import { getJsonWithFallback } from "@/lib/services/api-client"
 import type { XaiEntry } from "@/components/shared/xai-panel"
+import { EditorActions } from "@/components/editor/editor-actions"
 
 export default async function EditorPage() {
   const entries = await scheduleService.getEditorEntries()
@@ -30,10 +31,7 @@ export default async function EditorPage() {
               <Lock className="size-4" />
               Show locked slots
             </Button>
-            <Button className="rounded-2xl bg-violet-600 text-white hover:bg-violet-500">
-              <WandSparkles className="size-4" />
-              Re-solve open slots
-            </Button>
+            <EditorActions />
           </>
         }
       />
