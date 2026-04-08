@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { reportService } from "@/lib/services/report-service"
+import { ExportTimetableButton } from "@/components/shared/export-button"
+import { ReportExportAction } from "@/components/reports/report-export-action"
 
 export default async function ReportsPage() {
   const reportSummary = await reportService.getReportSummary()
@@ -15,10 +17,7 @@ export default async function ReportsPage() {
         title="Utilization, workload, and export reporting"
         description="Give judges a full picture of schedule quality with room usage, faculty gap pressure, compactness, and polished export surfaces."
         actions={
-          <Button className="rounded-2xl">
-            <Download className="size-4" />
-            Export active bundle
-          </Button>
+          <ExportTimetableButton />
         }
       />
 
@@ -43,9 +42,7 @@ export default async function ReportsPage() {
               </div>
               <h3 className="mt-5 text-lg font-semibold text-white">{item.label}</h3>
               <p className="mt-3 text-sm leading-6 text-slate-300">{item.description}</p>
-              <Button variant="outline" className="mt-5 rounded-2xl border-white/8 bg-white/5 text-slate-100">
-                Prepare export
-              </Button>
+              <ReportExportAction label={item.label} />
             </div>
           ))}
         </CardContent>
