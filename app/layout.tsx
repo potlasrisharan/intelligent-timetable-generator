@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import { appConfig } from "@/lib/config"
 import "./globals.css"
 
@@ -20,7 +21,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className="antialiased">
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <ClerkProvider>
+          <header>
+            <Show when="signed-out">
+              <SignInButton />
+              <SignUpButton />
+            </Show>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+          </header>
+          {children}
+        </ClerkProvider>
+      </body>
     </html>
   )
 }

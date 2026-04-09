@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, status
+
+logger = logging.getLogger(__name__)
 
 from ..models import (
     CombinedSection,
@@ -36,7 +39,8 @@ ResourceCollection = Literal[
 def get_departments() -> list[Department]:
     try:
         return [Department.model_validate(item) for item in store.list("departments")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for departments: %s", exc)
         return [Department.model_validate(item) for item in store.fallback.list("departments")]
 
 
@@ -44,7 +48,8 @@ def get_departments() -> list[Department]:
 def get_courses() -> list[Course]:
     try:
         return [Course.model_validate(item) for item in store.list("courses")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for courses: %s", exc)
         return [Course.model_validate(item) for item in store.fallback.list("courses")]
 
 
@@ -52,7 +57,8 @@ def get_courses() -> list[Course]:
 def get_faculty() -> list[Faculty]:
     try:
         return [Faculty.model_validate(item) for item in store.list("faculty")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for faculty: %s", exc)
         return [Faculty.model_validate(item) for item in store.fallback.list("faculty")]
 
 
@@ -60,7 +66,8 @@ def get_faculty() -> list[Faculty]:
 def get_rooms() -> list[Room]:
     try:
         return [Room.model_validate(item) for item in store.list("rooms")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for rooms: %s", exc)
         return [Room.model_validate(item) for item in store.fallback.list("rooms")]
 
 
@@ -68,7 +75,8 @@ def get_rooms() -> list[Room]:
 def get_sections() -> list[Section]:
     try:
         return [Section.model_validate(item) for item in store.list("sections")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for sections: %s", exc)
         return [Section.model_validate(item) for item in store.fallback.list("sections")]
 
 
@@ -76,7 +84,8 @@ def get_sections() -> list[Section]:
 def get_combined_sections() -> list[CombinedSection]:
     try:
         return [CombinedSection.model_validate(item) for item in store.list("combinedSections")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for combinedSections: %s", exc)
         return [CombinedSection.model_validate(item) for item in store.fallback.list("combinedSections")]
 
 
@@ -84,7 +93,8 @@ def get_combined_sections() -> list[CombinedSection]:
 def get_timeslots() -> list[Timeslot]:
     try:
         return [Timeslot.model_validate(item) for item in store.list("timeslots")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for timeslots: %s", exc)
         return [Timeslot.model_validate(item) for item in store.fallback.list("timeslots")]
 
 
@@ -92,7 +102,8 @@ def get_timeslots() -> list[Timeslot]:
 def get_holidays() -> list[Holiday]:
     try:
         return [Holiday.model_validate(item) for item in store.list("holidays")]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Falling back to seed data for holidays: %s", exc)
         return [Holiday.model_validate(item) for item in store.fallback.list("holidays")]
 
 

@@ -304,6 +304,7 @@ SEED_DATA = {
             "status": "open",
         },
     ],
+    "constraintRules": [],
     "auditTrail": [
         {"id": "evt-1", "actor": "Ayesha Rahman", "action": "Published timetable", "target": "Spring 2026 Active", "timestamp": "13 min ago", "tone": "success"},
         {"id": "evt-2", "actor": "Solver Worker", "action": "Completed partial regenerate", "target": "Draft version", "timestamp": "21 min ago", "tone": "info"},

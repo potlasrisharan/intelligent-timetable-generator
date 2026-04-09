@@ -135,6 +135,37 @@ export type Conflict = {
   status: "open" | "resolved"
 }
 
+export type ConstraintScope = "global" | "faculty" | "section" | "room" | "course"
+export type ConstraintKind =
+  | "faculty_max_periods_per_day"
+  | "faculty_unavailable_slot"
+  | "section_unavailable_slot"
+  | "room_unavailable_slot"
+  | "course_required_room"
+  | "holiday_block_day"
+
+export type ConstraintRule = {
+  id: string
+  scope: ConstraintScope
+  kind: ConstraintKind
+  targetId?: string | null
+  targetLabel?: string | null
+  detail: string
+  parameters: Record<string, unknown>
+  sourceFile?: string | null
+  enabled: boolean
+}
+
+export type CsvImportResult = {
+  status: "success"
+  message: string
+  collection: string
+  importedCount: number
+  constraintsApplied: number
+  constraints: ConstraintRule[]
+  assistantNote?: string | null
+}
+
 export type AiSuggestionImpact = "high" | "medium" | "low"
 export type AiSuggestionCategory = "quality" | "conflict" | "reschedule" | "assistant"
 

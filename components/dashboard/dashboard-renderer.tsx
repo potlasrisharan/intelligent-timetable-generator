@@ -14,11 +14,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authService } from "@/lib/services/auth-service"
-import type { DashboardMetrics, Section, UserRole, TimetableEntry } from "@/lib/types"
+import type {
+  ConstraintRule,
+  CsvImportResult,
+  DashboardMetrics,
+  Section,
+  UserRole,
+  TimetableEntry,
+} from "@/lib/types"
 import { envConfig } from "@/lib/config"
 import { scheduleService } from "@/lib/services/schedule-service"
 import { ExportTimetableButton } from "@/components/shared/export-button"
 import { DashboardAiPanels } from "@/components/ai/dashboard-ai-panels"
+import { aiService } from "@/lib/services/ai-service"
 
 const API_BASE = envConfig.apiBaseUrl
 
@@ -152,6 +160,29 @@ function SolverProgressBar({ status, progress, result }: {
   )
 }
 
+function formatConstraintRule(rule: ConstraintRule) {
+  const label = rule.targetLabel || "Global rule"
+  const parameters = rule.parameters as Record<string, unknown>
+  if (rule.kind === "faculty_max_periods_per_day") {
+    const value = parameters["maxPeriodsPerDay"]
+    return `${label} capped at ${String(value)} periods/day`
+  }
+  if (rule.kind === "course_required_room") {
+    const room = parameters["roomName"] || "specified room"
+    return `${label} locked to ${String(room)}`
+  }
+  if (rule.kind === "holiday_block_day") {
+    const day = parameters["day"] || "configured day"
+    return `${label} blocks ${String(day)}`
+  }
+  const day = parameters["day"] || "configured day"
+  const rawTimeslotIds = parameters["timeslotIds"]
+  const timeslotIds = Array.isArray(rawTimeslotIds)
+    ? rawTimeslotIds.map((item) => String(item).toUpperCase()).join(", ")
+    : ""
+  return `${label} unavailable on ${String(day)}${timeslotIds ? ` · ${timeslotIds}` : ""}`
+}
+
 // ─────────────────────────────────────────────────────────────
 // Main dashboard renderer
 // ─────────────────────────────────────────────────────────────
@@ -178,6 +209,9 @@ export function DashboardRenderer({
   const [theoryHours, setTheoryHours] = useState("")
   const [facultyName, setFacultyName] = useState("")
   const [poolItems, setPoolItems] = useState<string[]>([])
+  const [uploadSummary, setUploadSummary] = useState<CsvImportResult | null>(null)
+  const [constraintRules, setConstraintRules] = useState<ConstraintRule[]>([])
+  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { jobStatus, progress, result, startGenerate } = useGenerateJob()
@@ -201,6 +235,10 @@ export function DashboardRenderer({
   // Always load timetable entries (needed for Teacher + Student views, and after generate)
   useEffect(() => {
     scheduleService.getEditorEntries().then(setTimetableEntries)
+  }, [])
+
+  useEffect(() => {
+    aiService.getConstraintRules().then(setConstraintRules)
   }, [])
 
   // Refresh entries after a successful generate (Admin only)
@@ -388,18 +426,26 @@ export function DashboardRenderer({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setIsUploading(true)
     const formData = new FormData()
     formData.append("file", file)
     try {
       const res = await fetch(`${API_BASE}/import/csv`, { method: "POST", body: formData })
-      const data = await res.json()
+      const data = await res.json() as CsvImportResult | { detail?: string }
       if (res.ok) {
-        setPoolItems((prev) => [...prev, `[CSV] ${file.name} injected.`])
+        const summary = data as CsvImportResult
+        setUploadSummary(summary)
+        setPoolItems((prev) => [...prev, `[CSV] ${file.name} synced · ${summary.importedCount} rows · ${summary.constraintsApplied} AI rules`])
+        aiService.getConstraintRules().then(setConstraintRules)
       } else {
-        alert(`Error: ${data.detail || "Failed to upload"}`)
+        const errorMessage = "detail" in data ? data.detail : undefined
+        alert(`Error: ${errorMessage || "Failed to upload"}`)
       }
     } catch {
       alert("Network Error uploading CSV")
+    } finally {
+      setIsUploading(false)
+      e.target.value = ""
     }
   }
 
@@ -539,15 +585,62 @@ export function DashboardRenderer({
           <CardContent className="space-y-4">
             <input type="file" className="hidden" ref={fileInputRef} accept=".csv" onChange={handleFileUpload} />
             <div
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => !isUploading && fileInputRef.current?.click()}
               className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-white/5 px-6 py-10 transition-colors hover:border-amber-200/50 hover:bg-white/10"
             >
-              <div className="rounded-full bg-white/10 p-3 mb-3 text-slate-300 group-hover:text-amber-200">
+              <div className="mb-3 rounded-full border border-white/35 bg-[rgba(255,255,255,0.18)] p-3 text-[#5f6b85] group-hover:text-[#4f46e5]">
                 <Upload className="size-6" />
               </div>
-              <h3 className="font-semibold text-white">Click to upload data</h3>
-              <p className="mt-1 text-sm text-slate-400">Supported: room and course CSV files.</p>
+              <h3 className="font-semibold text-[#1a1a1a]">{isUploading ? "Analyzing uploaded file..." : "Click to upload data"}</h3>
+              <p className="mt-1 text-sm text-[#526277]">Supported: room, course, faculty, section, and holiday CSV files.</p>
             </div>
+            {uploadSummary && (
+              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#1d4ed8]">AI constraint sync</p>
+                    <p className="text-xs text-[#365b9b]">{uploadSummary.message}</p>
+                  </div>
+                  <StatusBadge tone="active">
+                    {uploadSummary.constraintsApplied} rules
+                  </StatusBadge>
+                </div>
+                <p className="mt-3 text-sm text-[#334155]">
+                  {uploadSummary.assistantNote || "The uploaded file has been folded into the scheduling ruleset."}
+                </p>
+                {uploadSummary.constraints.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {uploadSummary.constraints.slice(0, 4).map((rule) => (
+                      <div key={rule.id} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.16)] p-3">
+                        <p className="text-sm font-medium text-[#1a1a1a]">{formatConstraintRule(rule)}</p>
+                        <p className="mt-1 text-xs text-[#526277]">{rule.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {constraintRules.length > 0 && (
+              <div className="rounded-2xl border border-white/40 bg-[rgba(255,255,255,0.16)] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#1a1a1a]">Active imported constraints</p>
+                    <p className="text-xs text-[#526277]">These rules will be applied during the next timetable generation.</p>
+                  </div>
+                  <StatusBadge tone="healthy">
+                    {constraintRules.length} active
+                  </StatusBadge>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {constraintRules.slice(0, 5).map((rule) => (
+                    <div key={rule.id} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.16)] p-3">
+                      <p className="text-sm font-medium text-[#1a1a1a]">{formatConstraintRule(rule)}</p>
+                      <p className="mt-1 text-xs text-[#526277]">{rule.sourceFile || "Uploaded data source"}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {poolItems.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-slate-500">Injected Pool</p>

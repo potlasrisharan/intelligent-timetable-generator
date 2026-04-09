@@ -242,3 +242,96 @@ INSERT INTO audit_trail (id, actor, action, target, timestamp, tone) VALUES
 ('evt-2', 'Solver Worker', 'Completed partial regenerate', 'Draft version', '21 min ago', 'info'),
 ('evt-3', 'Prof. Sara Joseph', 'Updated availability', 'Tuesday slots', '48 min ago', 'warning'),
 ('evt-4', 'Import assistant', 'Loaded demo dataset', '9 sections / 15 courses', '1 hr ago', 'info') ON CONFLICT DO NOTHING;
+
+-------------------------------------------------------------------------------
+-- ROW LEVEL SECURITY (RLS) — CRIT-1/MED-6
+-- Prevents direct Supabase REST API access with just the anon key.
+-- These policies allow authenticated users full access. Refine per-role
+-- once Clerk or another auth provider is integrated.
+-------------------------------------------------------------------------------
+
+ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE faculty ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE combined_sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timeslots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE holidays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timetable_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE locked_slots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timetable_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conflicts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_trail ENABLE ROW LEVEL SECURITY;
+
+-- Read access for authenticated users on all tables
+CREATE POLICY "Authenticated users can read departments" ON departments FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read faculty" ON faculty FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read rooms" ON rooms FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read sections" ON sections FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read courses" ON courses FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read combined_sections" ON combined_sections FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read timeslots" ON timeslots FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read holidays" ON holidays FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read timetable_versions" ON timetable_versions FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read locked_slots" ON locked_slots FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read timetable_entries" ON timetable_entries FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read conflicts" ON conflicts FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can read audit_trail" ON audit_trail FOR SELECT TO authenticated USING (true);
+
+-- Write access for authenticated users (restrict further per-role when auth is added)
+CREATE POLICY "Authenticated users can insert departments" ON departments FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update departments" ON departments FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete departments" ON departments FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert faculty" ON faculty FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update faculty" ON faculty FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete faculty" ON faculty FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert rooms" ON rooms FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update rooms" ON rooms FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete rooms" ON rooms FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert sections" ON sections FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update sections" ON sections FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete sections" ON sections FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert courses" ON courses FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update courses" ON courses FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete courses" ON courses FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert combined_sections" ON combined_sections FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update combined_sections" ON combined_sections FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete combined_sections" ON combined_sections FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert timeslots" ON timeslots FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update timeslots" ON timeslots FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete timeslots" ON timeslots FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert holidays" ON holidays FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update holidays" ON holidays FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete holidays" ON holidays FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert timetable_versions" ON timetable_versions FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update timetable_versions" ON timetable_versions FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete timetable_versions" ON timetable_versions FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert locked_slots" ON locked_slots FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update locked_slots" ON locked_slots FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete locked_slots" ON locked_slots FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert timetable_entries" ON timetable_entries FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update timetable_entries" ON timetable_entries FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete timetable_entries" ON timetable_entries FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert conflicts" ON conflicts FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update conflicts" ON conflicts FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete conflicts" ON conflicts FOR DELETE TO authenticated USING (true);
+
+CREATE POLICY "Authenticated users can insert audit_trail" ON audit_trail FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update audit_trail" ON audit_trail FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete audit_trail" ON audit_trail FOR DELETE TO authenticated USING (true);
+
+-- Service role (used by the backend) bypasses RLS automatically.
+-- The anon key (exposed on the client) now gets ZERO access without authentication.
+

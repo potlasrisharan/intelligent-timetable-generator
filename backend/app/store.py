@@ -20,6 +20,8 @@ COLLECTION_MAP = {
     "timeslots": "timeslots",
     "holidays": "holidays",
     "conflicts": "conflicts",
+    "constraintRules": "constraint_rules",
+    "constraint_rules": "constraint_rules",
     "auditTrail": "audit_trail",
     "timetableVersions": "timetable_versions",
     "editorEntries": "timetable_entries",
@@ -178,7 +180,12 @@ class DatabaseStore:
             response = supabase.table(table_name).insert(snake_payload).execute()
             if not response.data:
                 raise ValueError(f"Failed to create in {collection}")
-            return to_camel_case(response.data[0])
+            created = to_camel_case(response.data[0])
+            try:
+                self.fallback.create(collection, created)
+            except ValueError:
+                self.fallback.update(collection, created["id"], created)
+            return created
         except Exception as e:
             print(f"DB Error create({collection}): {e}", file=sys.stderr)
             return self.fallback.create(collection, payload)
@@ -193,7 +200,12 @@ class DatabaseStore:
             response = supabase.table(table_name).update(snake_payload).eq("id", item_id).execute()
             if not response.data:
                 raise KeyError(f"{collection}:{item_id} not found")
-            return to_camel_case(response.data[0])
+            updated = to_camel_case(response.data[0])
+            try:
+                self.fallback.update(collection, item_id, updated)
+            except KeyError:
+                self.fallback.create(collection, updated)
+            return updated
         except Exception as e:
             print(f"DB Error update({collection}): {e}", file=sys.stderr)
             return self.fallback.update(collection, item_id, payload)
@@ -205,6 +217,10 @@ class DatabaseStore:
             
         try:
             supabase.table(table_name).delete().eq("id", item_id).execute()
+            try:
+                self.fallback.delete(collection, item_id)
+            except KeyError:
+                pass
         except Exception as e:
             print(f"DB Error delete({collection}): {e}", file=sys.stderr)
             self.fallback.delete(collection, item_id)
@@ -261,4 +277,3 @@ class DatabaseStore:
 
 
 store = DatabaseStore()
-

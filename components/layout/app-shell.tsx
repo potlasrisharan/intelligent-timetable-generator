@@ -196,8 +196,11 @@ export function AppShell({
                 size="icon"
                 className="rounded-full text-[#43546d] hover:bg-[rgba(255,255,255,0.24)]"
                 onClick={async () => {
-                  await authService.signOut()
-                  router.replace("/auth/login")
+                  authService.signOutLocally()
+                  if (typeof window !== "undefined" && (window as any).Clerk) {
+                     await (window as any).Clerk.signOut()
+                  }
+                  router.replace("/")
                 }}
               >
                 <LogOut className="size-4" />

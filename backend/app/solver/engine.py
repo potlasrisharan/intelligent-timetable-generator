@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 from ortools.sat.python import cp_model
 from ..store import store
 
@@ -15,6 +16,10 @@ def _seed_list(key: str) -> list[dict]:
     """
     src = store.fallback if hasattr(store, "fallback") else store
     return src.list(key)
+
+
+def _solver_list(key: str) -> list[dict]:
+    return _seed_list(key)
 
 
 def generate_timetable(department_id: str, version_id: str) -> dict:
@@ -34,13 +39,14 @@ def generate_timetable(department_id: str, version_id: str) -> dict:
                 result.append(item)
         return result
 
-    rooms = dedup(_seed_list("rooms"))
-    courses = dedup(_seed_list("courses"))
-    faculty = dedup(_seed_list("faculty"))
-    all_timeslots = _seed_list("timeslots")
+    rooms = dedup(_solver_list("rooms"))
+    courses = dedup(_solver_list("courses"))
+    faculty = dedup(_solver_list("faculty"))
+    all_timeslots = _solver_list("timeslots")
     timeslots = [t for t in all_timeslots if not t.get("isLunch")]
-    sections = dedup(_seed_list("sections"))
-    holidays = _seed_list("holidays")
+    sections = dedup(_solver_list("sections"))
+    holidays = _solver_list("holidays")
+    constraint_rules = dedup(_solver_list("constraintRules"))
 
     model = cp_model.CpModel()
 
@@ -74,11 +80,19 @@ def generate_timetable(department_id: str, version_id: str) -> dict:
     def period_index(day_idx: int, ts_idx: int) -> int:
         return day_idx * num_timeslots + ts_idx
 
-    # Build holiday-blocked periods
-    holiday_dates_raw = {h.get("date", "") for h in holidays}
-    # We'll block all slots that match holiday weekdays in our simplified 5-week grid
-    # For the demo, just mark Monday slots blocked if any holiday falls on a Monday
-    holiday_blocked_days: set[int] = set()
+    holiday_blocked_days = {
+        WEEKDAY_INDEX[weekday]
+        for weekday in {_weekday_from_date(h.get("date", "")) for h in holidays}
+        if weekday in WEEKDAY_INDEX
+    }
+    constraint_state = _build_constraint_state(
+        rules=constraint_rules,
+        faculty=faculty,
+        sections=sections,
+        rooms=rooms,
+        courses=courses,
+    )
+    holiday_blocked_days.update(WEEKDAY_INDEX[day] for day in constraint_state["holidayBlockedDays"])
 
     # Extract requests: what needs to be scheduled?
     # List of tuples: (course_id, section_id, faculty_id, is_lab, course_obj)
@@ -170,12 +184,32 @@ def generate_timetable(department_id: str, version_id: str) -> dict:
                 for p_id in range(total_periods):
                     model.Add(schedules[(r_id, p_id, rm_idx)] == 0)
 
+    # ── File-aware hard constraints inferred from uploads ──
+    for r_id, req in enumerate(requests):
+        course_id, sec_id, fac_id, _, _course_obj = req
+        required_room_id = constraint_state["courseRequiredRooms"].get(course_id)
+        for p_id in range(total_periods):
+            day_idx = p_id // num_timeslots
+            ts_idx = p_id % num_timeslots
+            day_name = weekdays[day_idx]
+            timeslot_id = timeslot_ids[ts_idx]
+
+            for rm_idx, room_id in enumerate(room_ids):
+                if (fac_id, day_name, timeslot_id) in constraint_state["facultyUnavailableSlots"]:
+                    model.Add(schedules[(r_id, p_id, rm_idx)] == 0)
+                if (sec_id, day_name, timeslot_id) in constraint_state["sectionUnavailableSlots"]:
+                    model.Add(schedules[(r_id, p_id, rm_idx)] == 0)
+                if (room_id, day_name, timeslot_id) in constraint_state["roomUnavailableSlots"]:
+                    model.Add(schedules[(r_id, p_id, rm_idx)] == 0)
+                if required_room_id and room_id != required_room_id:
+                    model.Add(schedules[(r_id, p_id, rm_idx)] == 0)
+
     # ── HC-09: Faculty max_periods_per_day not exceeded ──
     for day_idx in range(num_days):
         day_periods = list(range(day_idx * num_timeslots, (day_idx + 1) * num_timeslots))
         for fac_id in faculty_ids:
             fac_data = faculty_map.get(fac_id, {})
-            max_per_day = fac_data.get("maxPeriodsPerDay", 4)
+            max_per_day = constraint_state["facultyMaxPerDay"].get(fac_id, fac_data.get("maxPeriodsPerDay", 4))
             fac_requests = [
                 r_id for r_id, req in enumerate(requests) if req[2] == fac_id
             ]
@@ -391,3 +425,115 @@ def _default_xai_reason(entry: dict) -> str:
         f"for this timeslot. {entry.get('facultyName', 'Faculty')} confirmed free. "
         f"No section or faculty double-booking detected."
     )
+
+
+WEEKDAY_INDEX = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4}
+
+
+def _weekday_from_date(value: str) -> str | None:
+    try:
+        weekday_index = datetime.strptime(value.strip(), "%Y-%m-%d").weekday()
+    except Exception:
+        return None
+    if weekday_index > 4:
+        return None
+    return ["Mon", "Tue", "Wed", "Thu", "Fri"][weekday_index]
+
+
+def _build_constraint_state(
+    *,
+    rules: list[dict],
+    faculty: list[dict],
+    sections: list[dict],
+    rooms: list[dict],
+    courses: list[dict],
+) -> dict[str, Any]:
+    faculty_lookup = _entity_lookup(faculty, extra_keys=("name",))
+    section_lookup = _entity_lookup(sections, extra_keys=("name",))
+    room_lookup = _entity_lookup(rooms, extra_keys=("name",))
+    course_lookup = _entity_lookup(courses, extra_keys=("code", "name"))
+
+    state = {
+        "facultyMaxPerDay": {},
+        "facultyUnavailableSlots": set(),
+        "sectionUnavailableSlots": set(),
+        "roomUnavailableSlots": set(),
+        "courseRequiredRooms": {},
+        "holidayBlockedDays": set(),
+    }
+
+    for rule in rules:
+        if not rule.get("enabled", True):
+            continue
+
+        kind = rule.get("kind")
+        parameters = rule.get("parameters") or {}
+        target_id = rule.get("targetId")
+        target_label = rule.get("targetLabel")
+
+        if kind == "faculty_max_periods_per_day":
+            faculty_id = _resolve_lookup_id(faculty_lookup, target_id, target_label)
+            max_per_day = parameters.get("maxPeriodsPerDay")
+            if faculty_id and isinstance(max_per_day, int):
+                state["facultyMaxPerDay"][faculty_id] = max_per_day
+        elif kind == "faculty_unavailable_slot":
+            faculty_id = _resolve_lookup_id(faculty_lookup, target_id, target_label)
+            if faculty_id:
+                _append_slot_rule(state["facultyUnavailableSlots"], faculty_id, parameters)
+        elif kind == "section_unavailable_slot":
+            section_id = _resolve_lookup_id(section_lookup, target_id, target_label)
+            if section_id:
+                _append_slot_rule(state["sectionUnavailableSlots"], section_id, parameters)
+        elif kind == "room_unavailable_slot":
+            room_id = _resolve_lookup_id(room_lookup, target_id, target_label)
+            if room_id:
+                _append_slot_rule(state["roomUnavailableSlots"], room_id, parameters)
+        elif kind == "course_required_room":
+            course_id = _resolve_lookup_id(course_lookup, target_id, target_label)
+            room_id = _resolve_lookup_id(room_lookup, parameters.get("roomId"), parameters.get("roomName"))
+            if course_id and room_id:
+                state["courseRequiredRooms"][course_id] = room_id
+        elif kind == "holiday_block_day":
+            day = parameters.get("day")
+            if day in WEEKDAY_INDEX:
+                state["holidayBlockedDays"].add(day)
+
+    return state
+
+
+def _entity_lookup(items: list[dict], extra_keys: tuple[str, ...] = ()) -> dict[str, str]:
+    lookup: dict[str, str] = {}
+    for item in items:
+        item_id = item.get("id")
+        if not item_id:
+            continue
+        for key in ("id", *extra_keys):
+            value = item.get(key)
+            normalized = _normalize_lookup(value)
+            if normalized:
+                lookup[normalized] = item_id
+    return lookup
+
+
+def _resolve_lookup_id(lookup: dict[str, str], target_id: str | None, target_label: str | None) -> str | None:
+    for candidate in (target_id, target_label):
+        normalized = _normalize_lookup(candidate)
+        if normalized and normalized in lookup:
+            return lookup[normalized]
+    return None
+
+
+def _append_slot_rule(target: set[tuple[str, str, str]], entity_id: str, parameters: dict[str, Any]) -> None:
+    day = parameters.get("day")
+    timeslot_ids = parameters.get("timeslotIds") or []
+    if day not in WEEKDAY_INDEX:
+        return
+    for timeslot_id in timeslot_ids:
+        if isinstance(timeslot_id, str):
+            target.add((entity_id, day, timeslot_id))
+
+
+def _normalize_lookup(value: Any) -> str:
+    if not value:
+        return ""
+    return "".join(ch for ch in str(value).strip().lower() if ch.isalnum())

@@ -9,6 +9,15 @@ UserRole = Literal["ADMIN", "TEACHER", "STUDENT"]
 AppStatus = Literal["healthy", "warning", "critical", "inactive"]
 ConflictSeverity = Literal["critical", "high", "medium", "low"]
 TimetableVersionStatus = Literal["DRAFT", "ACTIVE", "ARCHIVED"]
+ConstraintScope = Literal["global", "faculty", "section", "room", "course"]
+ConstraintKind = Literal[
+    "faculty_max_periods_per_day",
+    "faculty_unavailable_slot",
+    "section_unavailable_slot",
+    "room_unavailable_slot",
+    "course_required_room",
+    "holiday_block_day",
+]
 
 
 class Department(BaseModel):
@@ -242,6 +251,28 @@ class ManualEntryRequest(BaseModel):
     facultyName: str
     roomName: str
     type: Literal["THEORY", "LAB"]
+
+
+class ConstraintRule(BaseModel):
+    id: str
+    scope: ConstraintScope
+    kind: ConstraintKind
+    targetId: str | None = None
+    targetLabel: str | None = None
+    detail: str
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    sourceFile: str | None = None
+    enabled: bool = True
+
+
+class ImportCsvResponse(BaseModel):
+    status: Literal["success"] = "success"
+    message: str
+    collection: str
+    importedCount: int
+    constraintsApplied: int = 0
+    constraints: list[ConstraintRule] = Field(default_factory=list)
+    assistantNote: str | None = None
 
 
 AiSuggestionImpact = Literal["high", "medium", "low"]

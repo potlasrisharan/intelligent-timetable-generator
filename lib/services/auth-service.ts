@@ -1,6 +1,5 @@
 import { demoUser } from "@/lib/mock-data"
-import { postJsonWithFallback } from "@/lib/services/api-client"
-import type { SessionState } from "@/lib/types"
+import type { SessionState, UserRole } from "@/lib/types"
 
 const SESSION_KEY = "itg-demo-session"
 
@@ -28,55 +27,49 @@ export const authService = {
     return readSession()
   },
 
-  async signIn(email: string, password?: string) {
-    // Maps demo credentials to real identities in the seed data
-    const identityMap: Record<string, Partial<typeof demoUser> & { sectionId?: string; facultyName?: string }> = {
-      "admin@sau.edu": {
+  /**
+   * Sets the demo role in local storage based on the selection, merging it with the
+   * real Clerk user identity (name, email) for display purposes.
+   */
+  setClerkDemoRole(clerkUser: { fullName?: string | null; primaryEmail?: string | null }, role: UserRole) {
+    // Maps roles to specific fake identifiers needed by the codebase
+    const roleMap: Record<UserRole, Partial<typeof demoUser> & { sectionId?: string; facultyName?: string }> = {
+      ADMIN: {
         role: "ADMIN",
-        name: "Ayesha Rahman",
         department: "University Scheduling Office",
       },
-      "teacher@sau.edu": {
+      TEACHER: {
         role: "TEACHER",
-        name: "Prof. Sara Joseph",
         department: "Computer Science",
-        facultyName: "Prof. Sara Joseph",  // exact match against timetable entries
+        facultyName: "Prof. Sara Joseph", // matches the seed data
       },
-      "student@sau.edu": {
+      STUDENT: {
         role: "STUDENT",
-        name: "Student (CSE 3A)",
         department: "Computer Science",
-        sectionId: "cse-3a",               // exact match against timetable entries
+        sectionId: "cse-3a", // matches the seed data
       },
     }
 
-    const identity = identityMap[email] ?? { role: "ADMIN" as const, name: email.split("@")[0] }
-    const fallbackUser = { ...demoUser, email, ...identity }
-
-    // Call the backend (if configured) but ALWAYS persist the locally-computed
-    // identity. The backend's /auth/sign-in may return a hardcoded ADMIN role,
-    // so we never let it override our role mapping.
-    await postJsonWithFallback("/auth/sign-in", { email, password }, fallbackUser)
-    const sessionUser = fallbackUser
+    const email = clerkUser.primaryEmail || "demo@sau.edu"
+    const name = clerkUser.fullName || email.split("@")[0]
+    
+    const fallbackUser = {
+      ...demoUser,
+      email,
+      name,
+      ...roleMap[role]
+    }
 
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser))
+      window.localStorage.setItem(SESSION_KEY, JSON.stringify(fallbackUser))
     }
 
-    return sessionUser
+    return fallbackUser
   },
 
-
-  async signOut() {
+  signOutLocally() {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(SESSION_KEY)
     }
-  },
-
-  async requestPasswordReset(email: string) {
-    return postJsonWithFallback("/auth/forgot-password", { email }, {
-      ok: true,
-      message: `Reset instructions queued for ${email}.`,
-    })
   },
 }

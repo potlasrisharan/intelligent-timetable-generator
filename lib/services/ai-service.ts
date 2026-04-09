@@ -3,6 +3,7 @@ import type {
   AiChatResponse,
   AutoRescheduleResult,
   ConflictPredictionResponse,
+  ConstraintRule,
   QualityReview,
 } from "@/lib/types"
 import { getJsonWithFallback, postJsonWithFallback } from "@/lib/services/api-client"
@@ -71,6 +72,12 @@ export const aiService = {
 
   async getConflictPrediction(): Promise<ConflictPredictionResponse> {
     return getJsonWithFallback("/ai/conflict-prediction", fallbackConflictPrediction, {
+      timeoutMs: AI_TIMEOUT_MS,
+    })
+  },
+
+  async getConstraintRules(): Promise<ConstraintRule[]> {
+    return getJsonWithFallback("/ai/constraint-rules", [], {
       timeoutMs: AI_TIMEOUT_MS,
     })
   },

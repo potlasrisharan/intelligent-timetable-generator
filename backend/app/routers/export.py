@@ -1,4 +1,5 @@
 import csv
+import re
 from io import BytesIO, StringIO
 from fastapi import APIRouter
 from fastapi.responses import Response
@@ -9,6 +10,12 @@ from reportlab.lib import colors
 from ..store import store
 
 router = APIRouter(prefix="/export", tags=["export"])
+
+
+def _sanitize_filename(value: str) -> str:
+    """Strip dangerous characters from filename components to prevent header injection."""
+    return re.sub(r"[^a-zA-Z0-9_\-]", "", value)[:100]
+
 
 @router.get("/pdf")
 def export_pdf(version_id: str):
@@ -71,7 +78,7 @@ def export_pdf(version_id: str):
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="timetable_{version_id}.pdf"'}
+        headers={"Content-Disposition": f'attachment; filename="timetable_{_sanitize_filename(version_id)}.pdf"'}
     )
     
 @router.get("/excel")
@@ -102,5 +109,5 @@ def export_excel(version_id: str):
     return Response(
         content=csv_file.getvalue(),
         media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="timetable_{version_id}.csv"'}
+        headers={"Content-Disposition": f'attachment; filename="timetable_{_sanitize_filename(version_id)}.csv"'}
     )

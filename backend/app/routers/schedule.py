@@ -23,6 +23,7 @@ router = APIRouter(prefix="/schedule", tags=["schedule"])
 # In-memory job tracker (sufficient for hackathon / single-process demo)
 _jobs: dict[str, dict[str, Any]] = {}
 _jobs_lock = threading.Lock()
+_MAX_CONCURRENT_SOLVER_JOBS = 2  # MED-4: Prevent thread exhaustion
 
 
 @router.get("/entries", response_model=list[TimetableEntry])
@@ -65,13 +66,15 @@ def _run_solver_job(job_id: str, scope: str) -> None:
                 "result": result,
             })
     except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("Solver job %s failed: %s", job_id, exc)
         with _jobs_lock:
             _jobs[job_id].update({
                 "status": "error",
                 "progress": 0,
                 "result": {
                     "status": "error",
-                    "message": str(exc),
+                    "message": "Schedule generation failed. Please review your inputs and try again.",
                     "quality_score": 0,
                 },
             })
@@ -83,6 +86,15 @@ def generate_schedule(payload: GenerateRequest) -> dict:
     Starts the OR-Tools solver in a background thread and returns a job_id
     immediately. Poll GET /schedule/generate/status/{job_id} for progress.
     """
+    # MED-4: Enforce concurrent solver limit
+    with _jobs_lock:
+        active_count = sum(1 for j in _jobs.values() if j["status"] in ("queued", "running"))
+        if active_count >= _MAX_CONCURRENT_SOLVER_JOBS:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many solver jobs in progress. Please wait for the current job to finish.",
+            )
+
     job_id = f"job-{uuid.uuid4().hex[:10]}"
     with _jobs_lock:
         _jobs[job_id] = {"status": "queued", "progress": 0, "result": None}

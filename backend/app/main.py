@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+import time
+from collections import defaultdict
+
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import settings
 from .routers.auth import router as auth_router
@@ -20,12 +24,64 @@ app = FastAPI(
     description="Hackathon-ready FastAPI backend for timetable scheduling, reports, and auth contracts.",
 )
 
+# ── Security headers middleware (LOW-2) ──
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        return response
+
+
+# ── Rate limiting middleware (MED-2) ──
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """Simple in-memory per-IP rate limiter. Limits expensive endpoints."""
+
+    RATE_LIMITS: dict[str, tuple[int, int]] = {
+        # path_prefix: (max_requests, window_seconds)
+        "/api/v1/schedule/generate": (5, 60),
+        "/api/v1/ai/chat": (20, 60),
+        "/api/v1/import/csv": (10, 60),
+        "/api/v1/auth/sign-in": (10, 60),
+        "/api/v1/export/": (15, 60),
+    }
+
+    def __init__(self, app):
+        super().__init__(app)
+        self._hits: dict[str, list[float]] = defaultdict(list)
+
+    async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host if request.client else "unknown"
+        path = request.url.path
+
+        for prefix, (max_req, window) in self.RATE_LIMITS.items():
+            if path.startswith(prefix):
+                key = f"{client_ip}:{prefix}"
+                now = time.time()
+                self._hits[key] = [t for t in self._hits[key] if now - t < window]
+                if len(self._hits[key]) >= max_req:
+                    return Response(
+                        content='{"detail":"Rate limit exceeded. Try again later."}',
+                        status_code=429,
+                        media_type="application/json",
+                    )
+                self._hits[key].append(now)
+                break
+
+        return await call_next(request)
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.cors_origins),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 
 
