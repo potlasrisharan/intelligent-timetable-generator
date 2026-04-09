@@ -11,7 +11,6 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
-  Search,
   Settings,
   WandSparkles,
   AlertTriangle,
@@ -28,7 +27,6 @@ import {
 import { BrandMark } from "@/components/shared/brand-mark"
 import { DottedSurface } from "@/components/shared/dotted-surface"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { authService } from "@/lib/services/auth-service"
 import type { AuthUser, UserRole } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -214,20 +212,7 @@ export function AppShell({
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex items-center gap-3">
                 <BrandMark className="lg:hidden" />
-                <div className="relative max-w-xl flex-1 xl:min-w-[380px]">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5c6f8d]" />
-                  <Input
-                    aria-label="Search the scheduling workspace"
-                    placeholder={
-                      user.role === "STUDENT"
-                        ? "Search your classes, rooms, or faculty..."
-                        : user.role === "TEACHER"
-                        ? "Search your assigned slots or sections..."
-                        : "Search sections, faculty, rooms, or schedules"
-                    }
-                    className="h-11 rounded-full border-white/45 bg-[rgba(255,255,255,0.18)] pl-10"
-                  />
-                </div>
+
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {user.role === "ADMIN" && (
