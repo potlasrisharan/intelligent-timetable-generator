@@ -184,7 +184,7 @@ def _normalize_header(value: str | None) -> str:
 
 
 def _infer_collection(fieldnames: set[str]) -> tuple[str | None, dict | None]:
-    # 1. Deterministic matching (Fast)
+    # 1. Strict deterministic matching (Fast)
     if "capacity" in fieldnames and {"name", "room_name", "room"} & fieldnames:
         return "rooms", None
     if {"max_periods_per_day", "weekly_load", "availability", "faculty_name"} & fieldnames:
@@ -195,9 +195,88 @@ def _infer_collection(fieldnames: set[str]) -> tuple[str | None, dict | None]:
         return "courses", None
     if "date" in fieldnames and {"impact", "holiday", "name"} & fieldnames:
         return "holidays", None
-    
-    # 2. AI-powered matching (Flexible)
+
+    # 2. Synonym-based matching (no API needed)
+    result = _synonym_infer_collection(fieldnames)
+    if result[0]:
+        return result
+
+    # 3. AI-powered matching (Flexible, needs GROQ_API_KEY)
     return _ai_infer_collection(fieldnames)
+
+
+# ── Synonym dictionaries for fuzzy header detection ──
+_ROOM_SYNONYMS = {
+    "classroom", "classroom_name", "hall", "hall_name", "venue", "venue_name",
+    "lab_name", "theatre", "lecture_hall", "room_no", "room_number",
+}
+_ROOM_CAPACITY_SYNONYMS = {
+    "capacity", "hall_capacity", "student_capacity", "seats", "seating_capacity",
+    "max_capacity", "size",
+}
+_FACULTY_SYNONYMS = {
+    "faculty", "faculty_name", "teacher", "teacher_name", "instructor",
+    "instructor_name", "professor", "professor_name", "staff", "staff_name",
+    "lecturer", "lecturer_name",
+}
+_SECTION_SYNONYMS = {
+    "section", "section_name", "batch", "batch_name", "class", "class_name",
+    "group", "group_name", "student_group", "division",
+}
+_COURSE_SYNONYMS = {
+    "course_code", "code", "subject_code", "subject", "subject_name",
+    "module", "module_code", "paper", "paper_code", "course",
+}
+_HOLIDAY_SYNONYMS = {
+    "holiday", "holiday_name", "festival", "event", "occasion",
+}
+_ROOM_TYPE_SYNONYMS = {
+    "type_of_room", "room_type", "type", "lab_or_class", "category",
+}
+
+
+def _synonym_infer_collection(fieldnames: set[str]) -> tuple[str | None, dict | None]:
+    has_room_name = bool(fieldnames & _ROOM_SYNONYMS)
+    has_room_cap = bool(fieldnames & _ROOM_CAPACITY_SYNONYMS)
+    has_faculty = bool(fieldnames & _FACULTY_SYNONYMS)
+    has_section = bool(fieldnames & _SECTION_SYNONYMS)
+    has_course = bool(fieldnames & _COURSE_SYNONYMS)
+    has_holiday = bool(fieldnames & _HOLIDAY_SYNONYMS)
+    has_room_type = bool(fieldnames & _ROOM_TYPE_SYNONYMS)
+
+    if has_room_name and (has_room_cap or has_room_type):
+        mapping = {}
+        for h in fieldnames:
+            if h in _ROOM_SYNONYMS: mapping["name"] = h
+            if h in _ROOM_CAPACITY_SYNONYMS: mapping["capacity"] = h
+            if h in _ROOM_TYPE_SYNONYMS: mapping["room_type"] = h
+        return "rooms", mapping
+
+    if has_faculty:
+        mapping = {}
+        for h in fieldnames:
+            if h in _FACULTY_SYNONYMS: mapping["name"] = h
+        return "faculty", mapping
+
+    if has_section:
+        mapping = {}
+        for h in fieldnames:
+            if h in _SECTION_SYNONYMS: mapping["name"] = h
+        return "sections", mapping
+
+    if has_course:
+        mapping = {}
+        for h in fieldnames:
+            if h in _COURSE_SYNONYMS: mapping["code"] = h
+        return "courses", mapping
+
+    if has_holiday and "date" in fieldnames:
+        mapping = {}
+        for h in fieldnames:
+            if h in _HOLIDAY_SYNONYMS: mapping["name"] = h
+        return "holidays", mapping
+
+    return None, None
 
 
 def _ai_infer_collection(fieldnames: set[str]) -> tuple[str | None, dict | None]:
@@ -211,8 +290,6 @@ def _ai_infer_collection(fieldnames: set[str]) -> tuple[str | None, dict | None]
         )
         response = _groq_chat([{"role": "user", "content": prompt}], max_completion_tokens=250)
         if not response: return None, None
-        
-        # Simple JSON extract
         match = re.search(r"\{.*\}", response, re.DOTALL)
         if not match: return None, None
         data = json.loads(match.group(0))
