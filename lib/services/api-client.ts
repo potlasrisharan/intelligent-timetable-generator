@@ -1,6 +1,6 @@
 import { envConfig } from "@/lib/config"
 
-const REQUEST_TIMEOUT_MS = 5000
+const REQUEST_TIMEOUT_MS = 12000
 type RequestOptions = {
   timeoutMs?: number
 }

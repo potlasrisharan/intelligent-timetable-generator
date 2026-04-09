@@ -33,7 +33,7 @@ export function ManualClassModal({ isOpen, onClose, day, timeslotId, sectionId, 
     
     setIsSubmitting(true)
     try {
-      await scheduleService.addManualEntry({
+      const result = await scheduleService.addManualEntry({
         day,
         timeslotId,
         sectionId,
@@ -43,10 +43,25 @@ export function ManualClassModal({ isOpen, onClose, day, timeslotId, sectionId, 
         roomName,
         type
       })
-      onSuccess()
-      onClose()
-    } catch {
-      alert("Failed to assign class manually")
+      
+      // Check if we got back a real result (not just fallback mock data)
+      if (result && result.id) {
+        // Reset form fields
+        setCourseCode("")
+        setCourseName("")
+        setFacultyName("")
+        setRoomName("")
+        setType("THEORY")
+        onSuccess()
+        onClose()
+      } else {
+        alert("Entry was saved locally. Refresh the page to see it.")
+        onSuccess()
+        onClose()
+      }
+    } catch (err) {
+      console.error("Manual entry failed:", err)
+      alert("Failed to assign class. Please check your connection and try again.")
     } finally {
       setIsSubmitting(false)
     }
