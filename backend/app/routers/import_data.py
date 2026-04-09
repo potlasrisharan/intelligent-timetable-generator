@@ -11,6 +11,8 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from ..constraint_service import infer_constraints_from_rows, save_constraint_rules
 from ..models import ImportCsvResponse
 from ..store import store
+import json
+
 
 router = APIRouter(prefix="/import", tags=["import"])
 
@@ -50,7 +52,7 @@ async def import_csv(file: UploadFile = File(...)) -> ImportCsvResponse:
         raise HTTPException(status_code=400, detail="CSV file has headers but no usable rows.")
 
     fieldnames = set(rows[0].keys())
-    collection = _infer_collection(fieldnames)
+    collection, ai_mapping = _infer_collection(fieldnames)
     if not collection:
         raise HTTPException(
             status_code=400,
@@ -62,15 +64,16 @@ async def import_csv(file: UploadFile = File(...)) -> ImportCsvResponse:
 
     imported_count = 0
     if collection == "rooms":
-        imported_count = _import_rooms(rows)
+        imported_count = _import_rooms(rows, ai_mapping)
     elif collection == "courses":
-        imported_count = _import_courses(rows)
+        imported_count = _import_courses(rows, ai_mapping)
     elif collection == "faculty":
-        imported_count = _import_faculty(rows)
+        imported_count = _import_faculty(rows, ai_mapping)
     elif collection == "sections":
-        imported_count = _import_sections(rows)
+        imported_count = _import_sections(rows, ai_mapping)
     elif collection == "holidays":
         imported_count = _import_holidays(rows)
+
 
     constraints, assistant_note = infer_constraints_from_rows(
         file_name=file.filename,
@@ -180,118 +183,160 @@ def _normalize_header(value: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
 
 
-def _infer_collection(fieldnames: set[str]) -> str | None:
+def _infer_collection(fieldnames: set[str]) -> tuple[str | None, dict | None]:
+    # 1. Deterministic matching (Fast)
     if "capacity" in fieldnames and {"name", "room_name", "room"} & fieldnames:
-        return "rooms"
+        return "rooms", None
     if {"max_periods_per_day", "weekly_load", "availability", "faculty_name"} & fieldnames:
-        return "faculty"
+        return "faculty", None
     if {"student_count", "advisor", "section_name", "section"} & fieldnames:
-        return "sections"
+        return "sections", None
     if {"theory_hours", "practical_hours", "course_code", "code"} & fieldnames:
-        return "courses"
+        return "courses", None
     if "date" in fieldnames and {"impact", "holiday", "name"} & fieldnames:
-        return "holidays"
-    return None
+        return "holidays", None
+    
+    # 2. AI-powered matching (Flexible)
+    return _ai_infer_collection(fieldnames)
 
 
-def _import_rooms(rows: list[dict[str, str]]) -> int:
+def _ai_infer_collection(fieldnames: set[str]) -> tuple[str | None, dict | None]:
+    try:
+        from ..ai_service import _groq_chat
+        headers_str = ", ".join(fieldnames)
+        prompt = (
+            "Identify what scheduling entity this CSV represents based on its headers. "
+            "Return JSON only: {\"collection\": \"rooms|faculty|sections|courses|holidays|none\", \"mapping\": {\"name\": \"csv_header_for_name\", \"id\": \"csv_id\", \"capacity\": \"csv_cap\", \"code\": \"csv_code\"}} "
+            f"Headers: {headers_str}"
+        )
+        response = _groq_chat([{"role": "user", "content": prompt}], max_completion_tokens=250)
+        if not response: return None, None
+        
+        # Simple JSON extract
+        match = re.search(r"\{.*\}", response, re.DOTALL)
+        if not match: return None, None
+        data = json.loads(match.group(0))
+        col = data.get("collection")
+        mapping = data.get("mapping", {})
+        if col in {"rooms", "faculty", "sections", "courses", "holidays"}:
+            return col, mapping
+    except Exception:
+        return None, None
+    return None, None
+
+
+
+
+def _import_rooms(rows: list[dict[str, str]], ai_mapping: dict[str, str] = None) -> int:
     imported = 0
+    m = ai_mapping or {}
     for row in rows:
-        name = row.get("name") or row.get("room_name") or row.get("room")
+        name = row.get(m.get("name")) or row.get("name") or row.get("room_name") or row.get("room") or row.get("classroom")
+
         if not name:
             continue
         room_id = _find_existing("rooms", name) or row.get("id") or row.get("room_id") or f"rm-{uuid.uuid4().hex[:6]}"
-        room_type = row.get("room_type") or row.get("type")
+        room_type = row.get(m.get("room_type")) or row.get(m.get("type")) or row.get("room_type") or row.get("type")
         payload = {
             "id": room_id,
             "name": name,
-            "block": row.get("block") or row.get("building") or "Main Block",
-            "capacity": _coerce_int(row.get("capacity")) or 30,
+            "block": row.get(m.get("block")) or row.get("block") or row.get("building") or "Main Block",
+            "capacity": _coerce_int(row.get(m.get("capacity"))) or _coerce_int(row.get("capacity")) or 30,
             "roomType": _normalize_room_type(room_type, name),
             "departmentExclusive": _resolve_department_id(
-                row.get("department_exclusive") or row.get("department_id") or row.get("department")
+                row.get(m.get("department")) or row.get("department_exclusive") or row.get("department_id") or row.get("department")
             ),
-            "utilization": _coerce_int(row.get("utilization")) or 0,
+            "utilization": _coerce_int(row.get(m.get("utilization"))) or _coerce_int(row.get("utilization")) or 0,
         }
+
         _upsert("rooms", payload, natural_key=name)
         imported += 1
     return imported
 
 
-def _import_faculty(rows: list[dict[str, str]]) -> int:
+def _import_faculty(rows: list[dict[str, str]], ai_mapping: dict[str, str] = None) -> int:
     imported = 0
+    m = ai_mapping or {}
     for row in rows:
-        name = row.get("name") or row.get("faculty_name") or row.get("faculty")
+        name = row.get(m.get("name")) or row.get("name") or row.get("faculty_name") or row.get("faculty") or row.get("instructor") or row.get("teacher")
+
         if not name:
             continue
-        faculty_id = _find_existing("faculty", name) or row.get("id") or row.get("faculty_id") or f"fac-{uuid.uuid4().hex[:6]}"
-        weekly_load = _coerce_int(row.get("weekly_load")) or 12
-        availability = row.get("availability") or "Mon-Fri, all day"
+        faculty_id = _find_existing("faculty", name) or row.get(m.get("id")) or row.get("id") or row.get("faculty_id") or f"fac-{uuid.uuid4().hex[:6]}"
+        weekly_load = _coerce_int(row.get(m.get("weekly_load"))) or _coerce_int(row.get("weekly_load")) or 12
+        availability = row.get(m.get("availability")) or row.get("availability") or "Mon-Fri, all day"
         payload = {
             "id": faculty_id,
             "name": name,
-            "designation": row.get("designation") or "Faculty",
-            "departmentId": _resolve_department_id(row.get("department_id") or row.get("department") or row.get("branch")) or "cse",
-            "maxPeriodsPerDay": _coerce_int(row.get("max_periods_per_day") or row.get("max_periods")) or 4,
+            "designation": row.get(m.get("designation")) or row.get("designation") or "Faculty",
+            "departmentId": _resolve_department_id(row.get(m.get("department")) or row.get("department_id") or row.get("department") or row.get("branch")) or "cse",
+            "maxPeriodsPerDay": _coerce_int(row.get(m.get("max_periods"))) or _coerce_int(row.get("max_periods_per_day")) or _coerce_int(row.get("max_periods")) or 4,
             "weeklyLoad": weekly_load,
             "availability": availability,
-            "preferences": _split_multi(row.get("preferences") or row.get("preferred_rooms") or row.get("preferred_slots")),
+            "preferences": _split_multi(row.get(m.get("preferences")) or row.get("preferences") or row.get("preferred_rooms") or row.get("preferred_slots")),
             "status": _derive_faculty_status(weekly_load, availability),
         }
+
         _upsert("faculty", payload, natural_key=name)
         imported += 1
     return imported
 
 
-def _import_sections(rows: list[dict[str, str]]) -> int:
+def _import_sections(rows: list[dict[str, str]], ai_mapping: dict[str, str] = None) -> int:
     imported = 0
+    m = ai_mapping or {}
     for row in rows:
-        section_name = row.get("name") or row.get("section_name") or row.get("section")
+        section_name = row.get(m.get("name")) or row.get("name") or row.get("section_name") or row.get("section") or row.get("batch") or row.get("class")
+
         if not section_name:
             continue
-        department_id = _resolve_department_id(row.get("department_id") or row.get("department") or row.get("branch")) or "cse"
+        department_id = _resolve_department_id(row.get(m.get("department")) or row.get("department_id") or row.get("department") or row.get("branch")) or "cse"
         display_name = _display_section_name(section_name, department_id)
-        section_id = _find_existing("sections", display_name) or row.get("id") or row.get("section_id") or _build_section_id(section_name, department_id)
+        section_id = _find_existing("sections", display_name) or row.get(m.get("id")) or row.get("id") or row.get("section_id") or _build_section_id(section_name, department_id)
         payload = {
             "id": section_id,
             "name": display_name,
             "departmentId": department_id,
-            "semester": _coerce_int(row.get("semester")) or _infer_semester_from_section(section_name),
-            "studentCount": _coerce_int(row.get("student_count")) or 30,
-            "advisor": row.get("advisor") or "Pending Advisor",
-            "compactness": _coerce_int(row.get("compactness")) or 100,
+            "semester": _coerce_int(row.get(m.get("semester"))) or _coerce_int(row.get("semester")) or _infer_semester_from_section(section_name),
+            "studentCount": _coerce_int(row.get(m.get("student_count"))) or _coerce_int(row.get("student_count")) or 30,
+            "advisor": row.get(m.get("advisor")) or row.get("advisor") or "Pending Advisor",
+            "compactness": _coerce_int(row.get(m.get("compactness"))) or _coerce_int(row.get("compactness")) or 100,
         }
+
         _upsert("sections", payload, natural_key=display_name)
         imported += 1
     return imported
 
 
-def _import_courses(rows: list[dict[str, str]]) -> int:
+def _import_courses(rows: list[dict[str, str]], ai_mapping: dict[str, str] = None) -> int:
     imported = 0
+    m = ai_mapping or {}
     for row in rows:
-        code = (row.get("code") or row.get("course_code") or "").upper()
+        code = (row.get(m.get("code")) or row.get("code") or row.get("course_code") or "").upper()
+
         if not code:
             continue
 
-        department_id = _resolve_department_id(row.get("department_id") or row.get("department") or row.get("branch")) or "cse"
-        theory_hours = _coerce_int(row.get("theory_hours")) or 0
-        practical_hours = _coerce_int(row.get("practical_hours")) or 0
-        section_ids = _resolve_section_ids(row.get("section_ids") or row.get("sections") or "", department_id)
-        faculty_id = _resolve_faculty_id(row.get("faculty_id") or row.get("faculty_name") or row.get("faculty")) or "fac-001"
+        department_id = _resolve_department_id(row.get(m.get("department")) or row.get("department_id") or row.get("department") or row.get("branch")) or "cse"
+        theory_hours = _coerce_int(row.get(m.get("theory_hours"))) or _coerce_int(row.get("theory_hours")) or 0
+        practical_hours = _coerce_int(row.get(m.get("practical_hours"))) or _coerce_int(row.get("practical_hours")) or 0
+        section_ids = _resolve_section_ids(row.get(m.get("sections")) or row.get("section_ids") or row.get("sections") or "", department_id)
+        faculty_id = _resolve_faculty_id(row.get(m.get("faculty")) or row.get("faculty_id") or row.get("faculty_name") or row.get("faculty")) or "fac-001"
 
         payload = {
-            "id": _find_existing("courses", code) or row.get("id") or row.get("course_id") or code.lower(),
+            "id": _find_existing("courses", code) or row.get(m.get("id")) or row.get("id") or row.get("course_id") or code.lower(),
             "code": code,
-            "name": row.get("name") or row.get("course_name") or "Unknown Course",
+            "name": row.get(m.get("name")) or row.get("name") or row.get("course_name") or "Unknown Course",
             "departmentId": department_id,
-            "semester": _coerce_int(row.get("semester")) or _infer_semester_from_sections(section_ids),
+            "semester": _coerce_int(row.get(m.get("semester"))) or _coerce_int(row.get("semester")) or _infer_semester_from_sections(section_ids),
             "theoryHours": theory_hours,
             "practicalHours": practical_hours,
-            "labRequired": practical_hours > 0 or _coerce_bool(row.get("lab_required")),
+            "labRequired": practical_hours > 0 or _coerce_bool(row.get(m.get("lab_required"))) or _coerce_bool(row.get("lab_required")),
             "facultyId": faculty_id,
             "sectionIds": section_ids,
-            "status": row.get("status") or "scheduled",
+            "status": row.get(m.get("status")) or row.get("status") or "scheduled",
         }
+
         _upsert("courses", payload, natural_key=code)
         imported += 1
     return imported
