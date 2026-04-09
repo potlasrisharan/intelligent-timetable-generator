@@ -20,7 +20,7 @@ export function DottedSurface({ className }: { className?: string }) {
     }
 
     const scene = new THREE.Scene()
-    scene.fog = new THREE.Fog(0x050a14, 1800, 8200)
+    scene.fog = new THREE.Fog(0xddeeff, 1800, 8200)
 
     const camera = new THREE.PerspectiveCamera(
       58,
@@ -54,7 +54,7 @@ export function DottedSurface({ className }: { className?: string }) {
           y * separation - (amountY * separation) / 2,
         )
 
-        colors.push(0.72, 0.75, 0.8)
+        colors.push(0.47, 0.68, 0.96)
       }
     }
 
@@ -65,7 +65,7 @@ export function DottedSurface({ className }: { className?: string }) {
       size: 6.5,
       vertexColors: true,
       transparent: true,
-      opacity: 0.58,
+      opacity: 0.36,
       sizeAttenuation: true,
     })
 
@@ -120,12 +120,12 @@ export function DottedSurface({ className }: { className?: string }) {
     <div
       ref={containerRef}
       className={cn(
-        "pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-80",
+        "pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-90",
         className,
       )}
     >
-      <div className="grid-mask absolute inset-0 opacity-35" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_25%),radial-gradient(circle_at_80%_20%,rgba(148,163,184,0.08),transparent_20%)]" />
+      <div className="grid-mask absolute inset-0 opacity-20" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(255,255,255,0.75),transparent_24%),radial-gradient(circle_at_78%_18%,rgba(115,171,255,0.28),transparent_20%),radial-gradient(circle_at_70%_78%,rgba(178,221,255,0.34),transparent_26%)]" />
     </div>
   )
 }

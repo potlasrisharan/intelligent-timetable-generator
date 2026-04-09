@@ -44,26 +44,26 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
 
   return (
     <>
-      <div className="overflow-x-auto overflow-y-hidden rounded-[1.4rem] border border-white/8 bg-[rgba(6,12,23,0.64)]">
+      <div className="glass-panel section-ring overflow-x-auto overflow-y-hidden rounded-[1.5rem] border border-white/50">
         <div className="grid min-w-[920px] grid-cols-[120px_repeat(5,minmax(0,1fr))]">
-          <div className="border-b border-r border-white/8 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-slate-500">
+          <div className="border-b border-r border-white/15 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-[#64748b]">
             Slot
           </div>
           {weekdays.map((day) => (
             <div
               key={day}
-              className="border-b border-white/8 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-slate-400"
+              className="border-b border-white/15 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-[#5f6b85]"
             >
               {day}
             </div>
           ))}
           {timeslots.map((slot) => (
             <div key={slot.id} className="contents">
-              <div className="border-r border-white/8 px-4 py-4">
-                <p className="font-data text-xs uppercase tracking-[0.24em] text-slate-400">
+              <div className="border-r border-white/15 px-4 py-4">
+                <p className="font-data text-xs uppercase tracking-[0.24em] text-[#5f6b85]">
                   {slot.label}
                 </p>
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="mt-2 text-sm text-[#64748b]">
                   {slot.start} - {slot.end}
                 </p>
               </div>
@@ -77,13 +77,13 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                   <div
                     key={`${slot.id}-${day}`}
                     className={cn(
-                      "min-h-28 border-r border-t border-white/8 p-3",
-                      slot.isLunch ? "bg-white/4" : "bg-transparent",
+                      "min-h-28 border-r border-t border-white/15 p-3",
+                      slot.isLunch ? "bg-[rgba(255,255,255,0.14)]" : "bg-transparent",
                     )}
                   >
                     {slot.isLunch ? (
-                      <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/4">
-                        <span className="font-data text-xs uppercase tracking-[0.3em] text-slate-500">
+                      <div className="liquid-surface flex h-full items-center justify-center rounded-2xl border border-dashed border-white/35 bg-[rgba(255,255,255,0.16)]">
+                        <span className="font-data text-xs uppercase tracking-[0.3em] text-[#64748b]">
                           Faculty lunch window
                         </span>
                       </div>
@@ -91,42 +91,42 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                       <div
                         onClick={() => handleCellClick(match)}
                         className={cn(
-                          "h-full cursor-pointer rounded-[1.15rem] border p-3 transition-all duration-200",
+                          "liquid-surface h-full cursor-pointer rounded-[1.25rem] border p-3 transition-all duration-200 backdrop-blur-[28px] backdrop-saturate-[160%]",
                           isActive
-                            ? "border-violet-400/50 bg-violet-500/15 shadow-[0_0_20px_-5px_rgba(139,92,246,0.4)]"
+                            ? "border-[#9baaf4]/50 bg-[rgba(149,160,255,0.24)] shadow-[0_18px_44px_-24px_rgba(94,109,199,0.5)]"
                             : match.locked
-                              ? "border-amber-300/30 bg-amber-400/10 hover:border-amber-300/50 hover:bg-amber-400/15"
-                              : "border-slate-300/16 bg-slate-300/8 hover:border-violet-400/30 hover:bg-violet-500/8",
+                              ? "border-amber-300/40 bg-[rgba(251,191,36,0.18)] hover:border-amber-300/60 hover:bg-[rgba(251,191,36,0.24)]"
+                              : "border-white/40 bg-[rgba(255,255,255,0.16)] hover:border-[#9baaf4]/40 hover:bg-[rgba(149,160,255,0.16)]",
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-white">{match.courseCode}</p>
-                            <p className="mt-1 text-sm text-slate-200">{match.courseName}</p>
+                            <p className="text-sm font-semibold text-[#1a1a1a]">{match.courseCode}</p>
+                            <p className="mt-1 text-sm text-[#475569]">{match.courseName}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <span className="font-data text-[0.72rem] uppercase tracking-[0.24em] text-slate-400">
+                            <span className="font-data text-[0.72rem] uppercase tracking-[0.24em] text-[#64748b]">
                               {match.type}
                             </span>
                           </div>
                         </div>
-                        <div className="mt-4 space-y-1 text-sm text-slate-300">
+                        <div className="mt-4 space-y-1 text-sm text-[#475569]">
                           <p>{match.facultyName}</p>
                           <p>{match.roomName}</p>
                         </div>
                         {match.note ? (
-                          <p className="mt-3 text-xs text-amber-100/80">{match.note}</p>
+                          <p className="mt-3 text-xs text-[#8a5a13]">{match.note}</p>
                         ) : null}
                       </div>
                     ) : (
                       <div 
                         onClick={() => setManualSlot({ day, timeslotId: slot.id })}
-                        className="h-full rounded-[1.15rem] border border-dashed border-white/8 bg-white/3 p-3 cursor-pointer hover:border-violet-400/30 hover:bg-violet-500/10 transition-colors"
+                        className="liquid-surface h-full cursor-pointer rounded-[1.25rem] border border-dashed border-white/35 bg-[rgba(255,255,255,0.14)] p-3 transition-colors hover:border-[#9baaf4]/40 hover:bg-[rgba(149,160,255,0.14)]"
                       >
-                        <p className="font-data text-[0.7rem] uppercase tracking-[0.26em] text-slate-500">
+                        <p className="font-data text-[0.7rem] uppercase tracking-[0.26em] text-[#64748b]">
                           Open placement
                         </p>
-                        <p className="mt-3 text-sm text-slate-400">
+                        <p className="mt-3 text-sm text-[#526277]">
                            Click to assign a class manually.
                         </p>
                       </div>
