@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useClerk } from "@clerk/nextjs"
 import {
   BookOpen,
   Calendar,
@@ -123,6 +124,7 @@ export function AppShell({
 }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { signOut } = useClerk()
   const nav = getNav(user.role)
 
   return (
@@ -197,9 +199,7 @@ export function AppShell({
                 className="rounded-full text-[#43546d] hover:bg-[rgba(255,255,255,0.24)]"
                 onClick={async () => {
                   authService.signOutLocally()
-                  if (typeof window !== "undefined" && (window as any).Clerk) {
-                     await (window as any).Clerk.signOut()
-                  }
+                  await signOut()
                   router.replace("/")
                 }}
               >

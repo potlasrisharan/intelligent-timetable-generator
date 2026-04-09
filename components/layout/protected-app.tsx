@@ -196,7 +196,7 @@ export function ProtectedApp({ children }: { children: ReactNode }) {
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-emerald-100 text-lg">Student</p>
-                  <p className="text-xs text-emerald-300/70 mt-1">Focused view of your specific section's classes.</p>
+                  <p className="text-xs text-emerald-300/70 mt-1">Focused view of your specific section&#39;s classes.</p>
                 </div>
              </Button>
            </div>
