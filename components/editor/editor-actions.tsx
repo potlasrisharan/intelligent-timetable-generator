@@ -44,17 +44,17 @@ export function EditorActions() {
     <div className="flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="rounded-full border-white/45 bg-[rgba(255,255,255,0.18)] text-[#1a1a1a]" disabled={isExporting}>
+          <Button variant="outline" className="rounded-full border-white/45 bg-[rgba(255,255,255,0.01)] text-[#f8fafc]" disabled={isExporting}>
              {isExporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
             Export Timetable
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 border-white/45 text-[#334155]">
-          <DropdownMenuItem onClick={() => handleExport("pdf")} className="cursor-pointer hover:bg-[rgba(255,255,255,0.22)] hover:text-[#1a1a1a]">
+        <DropdownMenuContent align="end" className="w-48 border-white/45 text-[#94a3b8]">
+          <DropdownMenuItem onClick={() => handleExport("pdf")} className="cursor-pointer hover:bg-[rgba(255,255,255,0.02)] hover:text-[#f8fafc]">
             <FileText className="mr-2 size-4 text-red-400" />
             Export as PDF
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleExport("excel")} className="cursor-pointer hover:bg-[rgba(255,255,255,0.22)] hover:text-[#1a1a1a]">
+          <DropdownMenuItem onClick={() => handleExport("excel")} className="cursor-pointer hover:bg-[rgba(255,255,255,0.02)] hover:text-[#f8fafc]">
             <FileSpreadsheet className="mr-2 size-4 text-emerald-400" />
             Export as Excel
           </DropdownMenuItem>
@@ -62,7 +62,7 @@ export function EditorActions() {
       </DropdownMenu>
 
       <Button
-        className="rounded-full bg-[rgba(147,197,253,0.38)] text-[#1a1a1a] hover:bg-[rgba(147,197,253,0.5)]"
+        className="rounded-full bg-[rgba(147,197,253,0.38)] text-[#f8fafc] hover:bg-[rgba(147,197,253,0.5)]"
         onClick={handleResolveOpenSlots}
         disabled={isResolving}
       >

@@ -125,7 +125,7 @@ export function DottedSurface({ className }: { className?: string }) {
       )}
     >
       <div className="grid-mask absolute inset-0 opacity-20" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(255,255,255,0.12),transparent_22%),radial-gradient(circle_at_78%_18%,rgba(255,255,255,0.06),transparent_18%),radial-gradient(circle_at_70%_78%,rgba(113,132,176,0.1),transparent_24%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(255,255,255,0.01),transparent_22%),radial-gradient(circle_at_78%_18%,rgba(255,255,255,0.06),transparent_18%),radial-gradient(circle_at_70%_78%,rgba(113,132,176,0.1),transparent_24%)]" />
     </div>
   )
 }

@@ -46,13 +46,13 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
     <>
       <div className="glass-panel section-ring overflow-x-auto overflow-y-hidden rounded-[1.5rem] border border-white/50">
         <div className="grid min-w-[920px] grid-cols-[120px_repeat(5,minmax(0,1fr))]">
-          <div className="border-b border-r border-white/15 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-[#64748b]">
+          <div className="border-b border-r border-white/15 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-[#94a3b8]">
             Slot
           </div>
           {weekdays.map((day) => (
             <div
               key={day}
-              className="border-b border-white/15 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-[#5f6b85]"
+              className="border-b border-white/15 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-[#cbd5e1]"
             >
               {day}
             </div>
@@ -60,10 +60,10 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
           {timeslots.map((slot) => (
             <div key={slot.id} className="contents">
               <div className="border-r border-white/15 px-4 py-4">
-                <p className="font-data text-xs uppercase tracking-[0.24em] text-[#5f6b85]">
+                <p className="font-data text-xs uppercase tracking-[0.24em] text-[#cbd5e1]">
                   {slot.label}
                 </p>
-                <p className="mt-2 text-sm text-[#64748b]">
+                <p className="mt-2 text-sm text-[#94a3b8]">
                   {slot.start} - {slot.end}
                 </p>
               </div>
@@ -78,12 +78,12 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                     key={`${slot.id}-${day}`}
                     className={cn(
                       "min-h-28 border-r border-t border-white/15 p-3",
-                      slot.isLunch ? "bg-[rgba(255,255,255,0.14)]" : "bg-transparent",
+                      slot.isLunch ? "bg-[rgba(255,255,255,0.01)]" : "bg-transparent",
                     )}
                   >
                     {slot.isLunch ? (
-                      <div className="liquid-surface flex h-full items-center justify-center rounded-2xl border border-dashed border-white/35 bg-[rgba(255,255,255,0.16)]">
-                        <span className="font-data text-xs uppercase tracking-[0.3em] text-[#64748b]">
+                      <div className="liquid-surface flex h-full items-center justify-center rounded-2xl border border-dashed border-white/35 bg-[rgba(255,255,255,0.01)]">
+                        <span className="font-data text-xs uppercase tracking-[0.3em] text-[#94a3b8]">
                           Faculty lunch window
                         </span>
                       </div>
@@ -96,21 +96,21 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                             ? "border-[#9baaf4]/50 bg-[rgba(149,160,255,0.24)] shadow-[0_18px_44px_-24px_rgba(94,109,199,0.5)]"
                             : match.locked
                               ? "border-amber-300/40 bg-[rgba(251,191,36,0.18)] hover:border-amber-300/60 hover:bg-[rgba(251,191,36,0.24)]"
-                              : "border-white/40 bg-[rgba(255,255,255,0.16)] hover:border-[#9baaf4]/40 hover:bg-[rgba(149,160,255,0.16)]",
+                              : "border-white/40 bg-[rgba(255,255,255,0.01)] hover:border-[#9baaf4]/40 hover:bg-[rgba(149,160,255,0.16)]",
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-[#1a1a1a]">{match.courseCode}</p>
-                            <p className="mt-1 text-sm text-[#475569]">{match.courseName}</p>
+                            <p className="text-sm font-semibold text-[#f8fafc]">{match.courseCode}</p>
+                            <p className="mt-1 text-sm text-[#cbd5e1]">{match.courseName}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <span className="font-data text-[0.72rem] uppercase tracking-[0.24em] text-[#64748b]">
+                            <span className="font-data text-[0.72rem] uppercase tracking-[0.24em] text-[#94a3b8]">
                               {match.type}
                             </span>
                           </div>
                         </div>
-                        <div className="mt-4 space-y-1 text-sm text-[#475569]">
+                        <div className="mt-4 space-y-1 text-sm text-[#cbd5e1]">
                           <p>{match.facultyName}</p>
                           <p>{match.roomName}</p>
                         </div>
@@ -121,12 +121,12 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                     ) : (
                       <div 
                         onClick={() => setManualSlot({ day, timeslotId: slot.id })}
-                        className="liquid-surface h-full cursor-pointer rounded-[1.25rem] border border-dashed border-white/35 bg-[rgba(255,255,255,0.14)] p-3 transition-colors hover:border-[#9baaf4]/40 hover:bg-[rgba(149,160,255,0.14)]"
+                        className="liquid-surface h-full cursor-pointer rounded-[1.25rem] border border-dashed border-white/35 bg-[rgba(255,255,255,0.01)] p-3 transition-colors hover:border-[#9baaf4]/40 hover:bg-[rgba(149,160,255,0.14)]"
                       >
-                        <p className="font-data text-[0.7rem] uppercase tracking-[0.26em] text-[#64748b]">
+                        <p className="font-data text-[0.7rem] uppercase tracking-[0.26em] text-[#94a3b8]">
                           Open placement
                         </p>
-                        <p className="mt-3 text-sm text-[#526277]">
+                        <p className="mt-3 text-sm text-[#94a3b8]">
                            Click to assign a class manually.
                         </p>
                       </div>

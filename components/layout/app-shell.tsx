@@ -129,21 +129,21 @@ export function AppShell({
     <div className="min-h-screen bg-transparent text-foreground">
       <DottedSurface />
       <div className="relative z-10 flex min-h-screen">
-        <aside className="hidden w-[294px] shrink-0 border-r border-white/30 bg-[rgba(255,255,255,0.12)] p-4 backdrop-blur-[26px] lg:flex lg:flex-col">
+        <aside className="hidden w-[294px] shrink-0 border-r border-white/30 bg-[rgba(255,255,255,0.01)] p-4 backdrop-blur-[26px] lg:flex lg:flex-col">
           <div className="glass-panel-strong rounded-[1.8rem] p-5">
             <BrandMark />
-            <div className="mt-6 rounded-[1.4rem] border border-white/45 bg-[rgba(255,255,255,0.2)] p-4 backdrop-blur-[20px]">
+            <div className="mt-6 rounded-[1.4rem] border border-white/45 bg-[rgba(255,255,255,0.02)] p-4 backdrop-blur-[20px]">
               <p className={`font-data text-[0.7rem] uppercase tracking-[0.26em] ${getRoleBadgeColor(user.role)}`}>
                 {getRoleLabel(user.role)}
               </p>
-              <h2 className="mt-3 text-lg font-semibold text-[#1a1a1a]">
+              <h2 className="mt-3 text-lg font-semibold text-[#f8fafc]">
                 {user.role === "STUDENT"
                   ? "View your timetable"
                   : user.role === "TEACHER"
                   ? "View your assigned classes"
                   : "Manage the timetable"}
               </h2>
-              <p className="mt-2 text-sm leading-6 text-[#43546d]">
+              <p className="mt-2 text-sm leading-6 text-[#94a3b8]">
                 {user.role === "STUDENT"
                   ? "Your section timetable, updated when admin publishes."
                   : user.role === "TEACHER"
@@ -168,9 +168,9 @@ export function AppShell({
                         asChild
                         variant="ghost"
                         className={cn(
-                          "h-10 w-full justify-start rounded-[0.95rem] px-3 text-left text-[#43546d] hover:bg-[rgba(255,255,255,0.24)] hover:text-[#1a1a1a]",
+                          "h-10 w-full justify-start rounded-[0.95rem] px-3 text-left text-[#94a3b8] hover:bg-[rgba(255,255,255,0.02)] hover:text-[#f8fafc]",
                           active &&
-                            "border border-white/55 bg-[rgba(255,255,255,0.3)] text-[#1a1a1a] shadow-[0_0_0_1px_rgba(255,255,255,0.35)]",
+                            "border border-white/55 bg-[rgba(255,255,255,0.03)] text-[#f8fafc] shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
                         )}
                       >
                         <Link href={item.href} className="flex items-center gap-3 w-full truncate">
@@ -188,13 +188,13 @@ export function AppShell({
           <div className="glass-panel rounded-[1.5rem] p-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-[#1a1a1a]">{user.name}</p>
+                <p className="text-sm font-medium text-[#f8fafc]">{user.name}</p>
                 <p className="mt-1 text-xs text-[#5c6f8d]">{user.role}</p>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full text-[#43546d] hover:bg-[rgba(255,255,255,0.24)]"
+                className="rounded-full text-[#94a3b8] hover:bg-[rgba(255,255,255,0.02)]"
                 onClick={async () => {
                   authService.signOutLocally()
                   await signOut()
@@ -208,7 +208,7 @@ export function AppShell({
         </aside>
 
         <div className="flex min-h-screen flex-1 flex-col min-w-0 w-full overflow-x-hidden">
-          <header className="sticky top-0 z-20 border-b border-white/30 bg-[rgba(255,255,255,0.16)] px-4 py-4 backdrop-blur-[24px] md:px-6">
+          <header className="sticky top-0 z-20 border-b border-white/30 bg-[rgba(255,255,255,0.01)] px-4 py-4 backdrop-blur-[24px] md:px-6">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex items-center gap-3">
                 <BrandMark className="lg:hidden" />

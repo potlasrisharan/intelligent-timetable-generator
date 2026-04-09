@@ -22,7 +22,7 @@ function SkeletonAppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-transparent text-foreground relative z-10 flex">
       {/* Sidebar Skeleton */}
-      <aside className="hidden w-[294px] shrink-0 border-r border-white/30 bg-[rgba(255,255,255,0.12)] p-4 backdrop-blur-[26px] lg:flex lg:flex-col gap-4">
+      <aside className="hidden w-[294px] shrink-0 border-r border-white/30 bg-[rgba(255,255,255,0.01)] p-4 backdrop-blur-[26px] lg:flex lg:flex-col gap-4">
         <div className="glass-panel-strong rounded-[1.8rem] h-40 animate-pulse bg-white/5" />
         <div className="glass-panel-strong rounded-[1.5rem] flex-1 animate-pulse bg-white/5" />
         <div className="glass-panel-strong rounded-[1.5rem] h-20 animate-pulse bg-white/5" />
@@ -31,7 +31,7 @@ function SkeletonAppShell({ children }: { children: ReactNode }) {
       {/* Main Content Skeleton */}
       <div className="flex min-h-screen flex-1 flex-col">
         {/* Header Skeleton */}
-        <header className="sticky top-0 z-20 border-b border-white/30 bg-[rgba(255,255,255,0.16)] px-4 py-4 backdrop-blur-[24px] md:px-6 h-20 flex items-center justify-between">
+        <header className="sticky top-0 z-20 border-b border-white/30 bg-[rgba(255,255,255,0.01)] px-4 py-4 backdrop-blur-[24px] md:px-6 h-20 flex items-center justify-between">
           <div className="h-10 w-64 rounded-full bg-white/10 animate-pulse" />
           <div className="h-10 w-32 rounded-full bg-white/10 animate-pulse" />
         </header>

@@ -70,12 +70,12 @@ export function XaiPanel({ entry, onClose }: Props) {
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[#5b6fc6]">
               Placement details
             </p>
-            <p className="mt-0.5 text-sm font-semibold text-[#1a1a1a]">{entry.courseCode} - {entry.slotLabel}</p>
+            <p className="mt-0.5 text-sm font-semibold text-[#f8fafc]">{entry.courseCode} - {entry.slotLabel}</p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="mt-0.5 rounded-full border border-white/35 bg-[rgba(255,255,255,0.18)] p-1.5 text-[#64748b] transition-colors hover:bg-[rgba(255,255,255,0.3)] hover:text-[#1a1a1a]"
+          className="mt-0.5 rounded-full border border-white/35 bg-[rgba(255,255,255,0.01)] p-1.5 text-[#94a3b8] transition-colors hover:bg-[rgba(255,255,255,0.03)] hover:text-[#f8fafc]"
         >
           <X className="size-4" />
         </button>
@@ -83,21 +83,21 @@ export function XaiPanel({ entry, onClose }: Props) {
 
       {/* Meta row */}
       <div className="flex gap-3 border-b border-white/8 px-5 py-3">
-        <span className="rounded-full border border-white/40 bg-[rgba(255,255,255,0.18)] px-2.5 py-1 text-xs text-[#475569]">
+        <span className="rounded-full border border-white/40 bg-[rgba(255,255,255,0.01)] px-2.5 py-1 text-xs text-[#cbd5e1]">
           {isLab ? <FlaskConical className="mr-1 inline size-3 text-[#b7791f]" /> : <Cpu className="mr-1 inline size-3 text-[#2563eb]" />}
           {entry.type}
         </span>
-        <span className="rounded-full border border-white/40 bg-[rgba(255,255,255,0.18)] px-2.5 py-1 text-xs text-[#475569]">
+        <span className="rounded-full border border-white/40 bg-[rgba(255,255,255,0.01)] px-2.5 py-1 text-xs text-[#cbd5e1]">
           Room: {entry.room}
         </span>
-        <span className="rounded-full border border-white/40 bg-[rgba(255,255,255,0.18)] px-2.5 py-1 text-xs text-[#475569]">
+        <span className="rounded-full border border-white/40 bg-[rgba(255,255,255,0.01)] px-2.5 py-1 text-xs text-[#cbd5e1]">
           Faculty: {entry.facultyName}
         </span>
       </div>
 
       {/* Constraint trace steps */}
       <div className="space-y-0.5 px-5 py-4">
-        <p className="mb-3 text-[0.7rem] uppercase tracking-[0.2em] text-[#64748b]">Placement checks</p>
+        <p className="mb-3 text-[0.7rem] uppercase tracking-[0.2em] text-[#94a3b8]">Placement checks</p>
         {STEPS.map((step, idx) => (
           <div
             key={idx}
@@ -121,7 +121,7 @@ export function XaiPanel({ entry, onClose }: Props) {
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 border-t border-white/8 px-5 py-4">
           <div className="flex gap-3 rounded-[1.15rem] border border-[#9baaf4]/35 bg-[rgba(149,160,255,0.16)] p-4">
             <Lightbulb className="mt-0.5 size-4 shrink-0 text-[#5566d5]" />
-            <p className="text-sm leading-[1.65] text-[#334155]">{entry.reason}</p>
+            <p className="text-sm leading-[1.65] text-[#94a3b8]">{entry.reason}</p>
           </div>
         </div>
       )}

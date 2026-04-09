@@ -588,11 +588,11 @@ export function DashboardRenderer({
               onClick={() => !isUploading && fileInputRef.current?.click()}
               className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-white/5 px-6 py-10 transition-colors hover:border-amber-200/50 hover:bg-white/10"
             >
-              <div className="mb-3 rounded-full border border-white/35 bg-[rgba(255,255,255,0.18)] p-3 text-[#5f6b85] group-hover:text-[#4f46e5]">
+              <div className="mb-3 rounded-full border border-white/35 bg-[rgba(255,255,255,0.01)] p-3 text-[#cbd5e1] group-hover:text-[#4f46e5]">
                 <Upload className="size-6" />
               </div>
-              <h3 className="font-semibold text-[#1a1a1a]">{isUploading ? "Analyzing uploaded file..." : "Click to upload data"}</h3>
-              <p className="mt-1 text-sm text-[#526277]">Supported: room, course, faculty, section, and holiday CSV files.</p>
+              <h3 className="font-semibold text-[#f8fafc]">{isUploading ? "Analyzing uploaded file..." : "Click to upload data"}</h3>
+              <p className="mt-1 text-sm text-[#94a3b8]">Supported: room, course, faculty, section, and holiday CSV files.</p>
             </div>
             {uploadSummary && (
               <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
@@ -605,15 +605,15 @@ export function DashboardRenderer({
                     {uploadSummary.constraintsApplied} rules
                   </StatusBadge>
                 </div>
-                <p className="mt-3 text-sm text-[#334155]">
+                <p className="mt-3 text-sm text-[#94a3b8]">
                   {uploadSummary.assistantNote || "The uploaded file has been folded into the scheduling ruleset."}
                 </p>
                 {uploadSummary.constraints.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {uploadSummary.constraints.slice(0, 4).map((rule) => (
-                      <div key={rule.id} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.16)] p-3">
-                        <p className="text-sm font-medium text-[#1a1a1a]">{formatConstraintRule(rule)}</p>
-                        <p className="mt-1 text-xs text-[#526277]">{rule.detail}</p>
+                      <div key={rule.id} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.01)] p-3">
+                        <p className="text-sm font-medium text-[#f8fafc]">{formatConstraintRule(rule)}</p>
+                        <p className="mt-1 text-xs text-[#94a3b8]">{rule.detail}</p>
                       </div>
                     ))}
                   </div>
@@ -621,11 +621,11 @@ export function DashboardRenderer({
               </div>
             )}
             {constraintRules.length > 0 && (
-              <div className="rounded-2xl border border-white/40 bg-[rgba(255,255,255,0.16)] p-4">
+              <div className="rounded-2xl border border-white/40 bg-[rgba(255,255,255,0.01)] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-[#1a1a1a]">Active imported constraints</p>
-                    <p className="text-xs text-[#526277]">These rules will be applied during the next timetable generation.</p>
+                    <p className="text-sm font-semibold text-[#f8fafc]">Active imported constraints</p>
+                    <p className="text-xs text-[#94a3b8]">These rules will be applied during the next timetable generation.</p>
                   </div>
                   <StatusBadge tone="healthy">
                     {constraintRules.length} active
@@ -633,9 +633,9 @@ export function DashboardRenderer({
                 </div>
                 <div className="mt-3 space-y-2">
                   {constraintRules.slice(0, 5).map((rule) => (
-                    <div key={rule.id} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.16)] p-3">
-                      <p className="text-sm font-medium text-[#1a1a1a]">{formatConstraintRule(rule)}</p>
-                      <p className="mt-1 text-xs text-[#526277]">{rule.sourceFile || "Uploaded data source"}</p>
+                    <div key={rule.id} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.01)] p-3">
+                      <p className="text-sm font-medium text-[#f8fafc]">{formatConstraintRule(rule)}</p>
+                      <p className="mt-1 text-xs text-[#94a3b8]">{rule.sourceFile || "Uploaded data source"}</p>
                     </div>
                   ))}
                 </div>

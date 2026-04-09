@@ -171,9 +171,9 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
                   {aiResults[conflict.id].changes.length > 0 ? (
                     <div className="mt-3 space-y-2">
                       {aiResults[conflict.id].changes.map((change) => (
-                        <div key={change.entryId} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.16)] px-3 py-2">
-                          <p className="font-medium text-[#1a1a1a]">{change.courseCode}</p>
-                          <p className="mt-1 text-xs text-[#526277]">
+                        <div key={change.entryId} className="liquid-surface rounded-xl border border-white/40 bg-[rgba(255,255,255,0.01)] px-3 py-2">
+                          <p className="font-medium text-[#f8fafc]">{change.courseCode}</p>
+                          <p className="mt-1 text-xs text-[#94a3b8]">
                             {change.fromLabel} {"->"} {change.toLabel}
                           </p>
                         </div>
