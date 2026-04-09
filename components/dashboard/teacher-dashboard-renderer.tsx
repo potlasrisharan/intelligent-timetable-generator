@@ -141,7 +141,7 @@ export function TeacherDashboardRenderer() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-sm">
+              <table className="w-full min-w-[860px] border-collapse text-sm">
                 <thead>
                   <tr>
                     <th className="py-2 pr-3 text-left font-data text-[0.68rem] uppercase tracking-[0.22em] text-slate-500 w-12">
