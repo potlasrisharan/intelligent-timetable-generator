@@ -147,9 +147,8 @@ def add_manual_entry(payload: ManualEntryRequest) -> TimetableEntry:
         "locked": True,
         "combined": False,
         "note": "Manually assigned block",
-        "_xai_reason": "Slot added manually via the Add Class UI.",
     }
-    # Add to the global store entries
-    store.fallback.data.setdefault("editorEntries", []).append(entry_dict)
+    # Add to the global store using store.create so it syncs to DB if enabled
+    store.create("editorEntries", entry_dict)
     
     return TimetableEntry.model_validate(entry_dict)
