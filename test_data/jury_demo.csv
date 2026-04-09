@@ -1,0 +1,8 @@
+code,name,department,semester,theory_hours,practical_hours,faculty_name,sections,notes
+CS302,Operating Systems,CSE,3,4,0,Prof. Sara Joseph,"CSE 3A,CSE 3B",Core theory subject. No lab component.
+CS303,Computer Networks,CSE,3,3,0,Dr. Farhan Alam,"CSE 3A,CSE 3B",Networking fundamentals.
+CS304,Discrete Mathematics,CSE,3,4,0,Prof. Sara Joseph,"CSE 3A",Mathematical foundations for CS.
+CS305,Object Oriented Programming,CSE,3,3,2,Dr. Farhan Alam,"CSE 3A",OOP concepts with Java lab sessions.
+CS306,Data Communication,CSE,3,3,0,Prof. Sara Joseph,"CSE 3A",Complements Computer Networks.
+HS210,Technical Communication,CSE,3,2,0,Prof. Sara Joseph,"CSE 3A,CSE 3B",Soft skills and report writing.
+CS307,Web Technologies,CSE,3,2,2,Dr. Farhan Alam,"CSE 3A",HTML CSS JS with hands-on lab.
