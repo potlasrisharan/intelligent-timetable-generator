@@ -45,7 +45,7 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
   return (
     <>
       <div className="glass-panel section-ring overflow-x-auto overflow-y-hidden rounded-[1.5rem] border border-white/50">
-        <div className="grid min-w-[920px] grid-cols-[120px_repeat(5,minmax(0,1fr))]">
+        <div className="grid min-w-[1080px] grid-cols-[120px_repeat(5,minmax(0,1fr))]">
           <div className="border-b border-r border-white/15 px-4 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-[#94a3b8]">
             Slot
           </div>

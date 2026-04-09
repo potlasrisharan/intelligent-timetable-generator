@@ -9,10 +9,10 @@ export function BrandMark({ className }: { className?: string }) {
         <CalendarRange className="size-5" />
       </div>
       <div className="min-w-0">
-        <p className="font-display truncate text-[0.95rem] font-semibold tracking-tight text-[#f8fafc]">
+        <p className="font-display text-[0.95rem] font-semibold tracking-tight text-[#f8fafc]">
           {appConfig.shortName}
         </p>
-        <p className="truncate text-[0.72rem] uppercase tracking-[0.24em] text-[#5c6f8d]">
+        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-[#5c6f8d] leading-normal mt-0.5">
           {appConfig.institution}
         </p>
       </div>
