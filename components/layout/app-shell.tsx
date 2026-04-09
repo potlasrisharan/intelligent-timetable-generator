@@ -207,7 +207,7 @@ export function AppShell({
           </div>
         </aside>
 
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen flex-1 flex-col min-w-0 w-full overflow-x-hidden">
           <header className="sticky top-0 z-20 border-b border-white/30 bg-[rgba(255,255,255,0.16)] px-4 py-4 backdrop-blur-[24px] md:px-6">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex items-center gap-3">
