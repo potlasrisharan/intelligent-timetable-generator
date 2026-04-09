@@ -1,6 +1,9 @@
 import { envConfig } from "@/lib/config"
 
 const REQUEST_TIMEOUT_MS = 5000
+type RequestOptions = {
+  timeoutMs?: number
+}
 
 function buildApiUrl(path: string) {
   const normalizedBase = envConfig.apiBaseUrl.replace(/\/$/, "")
@@ -9,9 +12,9 @@ function buildApiUrl(path: string) {
   return `${normalizedBase}${normalizedPath}`
 }
 
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+async function requestJson<T>(path: string, init?: RequestInit, options?: RequestOptions): Promise<T> {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), options?.timeoutMs ?? REQUEST_TIMEOUT_MS)
 
   try {
     const response = await fetch(buildApiUrl(path), {
@@ -34,13 +37,13 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
-export async function getJsonWithFallback<T>(path: string, fallbackValue: T) {
+export async function getJsonWithFallback<T>(path: string, fallbackValue: T, options?: RequestOptions) {
   if (!envConfig.apiBaseUrl) {
     return fallbackValue
   }
 
   try {
-    return await requestJson<T>(path)
+    return await requestJson<T>(path, undefined, options)
   } catch {
     return fallbackValue
   }
@@ -50,6 +53,7 @@ export async function postJsonWithFallback<TResponse>(
   path: string,
   body: unknown,
   fallbackValue: TResponse,
+  options?: RequestOptions,
 ) {
   if (!envConfig.apiBaseUrl) {
     return fallbackValue
@@ -59,7 +63,7 @@ export async function postJsonWithFallback<TResponse>(
     return await requestJson<TResponse>(path, {
       method: "POST",
       body: JSON.stringify(body),
-    })
+    }, options)
   } catch {
     return fallbackValue
   }

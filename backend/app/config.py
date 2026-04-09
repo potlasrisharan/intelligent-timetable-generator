@@ -15,6 +15,9 @@ class Settings:
     api_prefix: str = "/api/v1"
     host: str = os.getenv("BACKEND_HOST", "127.0.0.1")
     port: int = int(os.getenv("PORT", os.getenv("BACKEND_PORT", "8000")))
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+    groq_base_url: str = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
     cors_origins: tuple[str, ...] = tuple(
         _split_csv(
             os.getenv(

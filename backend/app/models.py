@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 UserRole = Literal["ADMIN", "TEACHER", "STUDENT"]
@@ -243,3 +243,76 @@ class ManualEntryRequest(BaseModel):
     roomName: str
     type: Literal["THEORY", "LAB"]
 
+
+AiSuggestionImpact = Literal["high", "medium", "low"]
+AiSuggestionCategory = Literal["quality", "conflict", "reschedule", "assistant"]
+ChatMessageRole = Literal["user", "assistant"]
+
+
+class AiSuggestion(BaseModel):
+    id: str
+    title: str
+    detail: str
+    impact: AiSuggestionImpact
+    category: AiSuggestionCategory
+
+
+class QualityReviewResponse(BaseModel):
+    generatedAt: str
+    score: int
+    summary: str
+    strengths: list[str]
+    suggestions: list[AiSuggestion]
+    assistantNote: str | None = None
+
+
+class ConflictPrediction(BaseModel):
+    id: str
+    title: str
+    detail: str
+    severity: ConflictSeverity
+    confidence: int
+    affected: list[str]
+    suggestion: str
+
+
+class ConflictPredictionResponse(BaseModel):
+    generatedAt: str
+    summary: str
+    predictions: list[ConflictPrediction]
+    assistantNote: str | None = None
+
+
+class AutoRescheduleChange(BaseModel):
+    entryId: str
+    courseCode: str
+    fromLabel: str
+    toLabel: str
+    rationale: str
+
+
+class AutoRescheduleResponse(BaseModel):
+    ok: bool = True
+    applied: bool
+    conflictId: str
+    resolution: str
+    summary: str
+    changes: list[AutoRescheduleChange]
+    assistantNote: str | None = None
+
+
+class AiChatMessage(BaseModel):
+    role: ChatMessageRole
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class AiChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    history: list[AiChatMessage] = Field(default_factory=list, max_length=12)
+    page: str | None = None
+
+
+class AiChatResponse(BaseModel):
+    ok: bool = True
+    reply: str
+    suggestedPrompts: list[str]

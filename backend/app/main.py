@@ -12,6 +12,7 @@ from .routers.schedule import router as schedule_router
 from .routers.export import router as export_router
 from .routers.import_data import router as import_router
 from .routers.explain import router as explain_router
+from .routers.ai import router as ai_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -41,3 +42,4 @@ app.include_router(reports_router, prefix=settings.api_prefix)
 app.include_router(export_router, prefix=settings.api_prefix)
 app.include_router(import_router, prefix=settings.api_prefix)
 app.include_router(explain_router, prefix=settings.api_prefix)
+app.include_router(ai_router, prefix=settings.api_prefix)

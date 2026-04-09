@@ -1,15 +1,20 @@
 "use client"
 
 import { useState } from "react"
+import { WandSparkles } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { aiService } from "@/lib/services/ai-service"
 import { scheduleService } from "@/lib/services/schedule-service"
-import type { Conflict } from "@/lib/types"
+import type { AutoRescheduleResult, Conflict } from "@/lib/types"
 
 export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[] }) {
   const [conflicts, setConflicts] = useState(initialConflicts)
   const [resolving, setResolving] = useState<string | null>(null)
+  const [aiResolving, setAiResolving] = useState<string | null>(null)
+  const [aiResults, setAiResults] = useState<Record<string, AutoRescheduleResult>>({})
+  const [lastAiAction, setLastAiAction] = useState<string | null>(null)
 
   const handleResolve = async (conflictId: string, fix: string) => {
     setResolving(conflictId)
@@ -28,6 +33,36 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
     }
   }
 
+  const handleAiResolve = async (conflictId: string) => {
+    setAiResolving(conflictId)
+    try {
+      const result = await aiService.autoReschedule(conflictId)
+      setAiResults((current) => ({ ...current, [conflictId]: result }))
+      if (result.applied) {
+        setLastAiAction(result.summary)
+        setConflicts((prev) =>
+          prev.map((conflict) =>
+            conflict.id === conflictId ? { ...conflict, status: "resolved" } : conflict,
+          ),
+        )
+      }
+    } catch {
+      setAiResults((current) => ({
+        ...current,
+        [conflictId]: {
+          ok: true,
+          applied: false,
+          conflictId,
+          resolution: "",
+          summary: "AI could not apply a safe reschedule right now.",
+          changes: [],
+        },
+      }))
+    } finally {
+      setAiResolving(null)
+    }
+  }
+
   const openConflicts = conflicts.filter((c) => c.status !== "resolved")
 
   if (openConflicts.length === 0) {
@@ -41,6 +76,12 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
           <p className="text-slate-400 max-w-sm mx-auto">
             You&apos;ve successfully resolved all scheduling conflicts. The timetable is ready to be published!
           </p>
+          {lastAiAction ? (
+            <div className="mx-auto max-w-md rounded-[1.15rem] border border-emerald-400/18 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100">
+              <WandSparkles className="mr-2 inline size-4" />
+              {lastAiAction}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     )
@@ -48,6 +89,12 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
 
   return (
     <div className="space-y-5">
+      {lastAiAction ? (
+        <div className="rounded-[1.25rem] border border-emerald-400/18 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100">
+          <WandSparkles className="mr-2 inline size-4" />
+          {lastAiAction}
+        </div>
+      ) : null}
       {openConflicts.map((conflict) => (
         <Card key={conflict.id} className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader className="space-y-3">
@@ -56,9 +103,21 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
                 <CardTitle className="text-xl text-white">{conflict.title}</CardTitle>
                 <p className="mt-2 text-sm leading-6 text-slate-300">{conflict.description}</p>
               </div>
-              <StatusBadge tone={conflict.severity === "critical" ? "critical" : conflict.severity === "high" ? "warning" : "active"}>
-                {conflict.severity}
-              </StatusBadge>
+              <div className="flex items-center gap-2">
+                <StatusBadge tone={conflict.severity === "critical" ? "critical" : conflict.severity === "high" ? "warning" : "active"}>
+                  {conflict.severity}
+                </StatusBadge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl border-violet-500/20 bg-violet-500/10 text-violet-100 hover:bg-violet-500/20"
+                  onClick={() => void handleAiResolve(conflict.id)}
+                  disabled={aiResolving === conflict.id}
+                >
+                  <WandSparkles className="size-4" />
+                  {aiResolving === conflict.id ? "Rescheduling..." : "AI auto-reschedule"}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
@@ -97,6 +156,32 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
                   </p>
                 </div>
               </div>
+              {aiResults[conflict.id] ? (
+                <div
+                  className={`rounded-[1.2rem] border p-4 text-sm leading-6 ${
+                    aiResults[conflict.id].applied
+                      ? "border-emerald-400/18 bg-emerald-400/10 text-emerald-100"
+                      : "border-violet-500/18 bg-violet-500/10 text-violet-100"
+                  }`}
+                >
+                  <p className="font-medium">{aiResults[conflict.id].summary}</p>
+                  {aiResults[conflict.id].assistantNote ? (
+                    <p className="mt-2">{aiResults[conflict.id].assistantNote}</p>
+                  ) : null}
+                  {aiResults[conflict.id].changes.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {aiResults[conflict.id].changes.map((change) => (
+                        <div key={change.entryId} className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+                          <p className="font-medium text-white">{change.courseCode}</p>
+                          <p className="mt-1 text-xs text-slate-200">
+                            {change.fromLabel} {"->"} {change.toLabel}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </CardContent>
         </Card>

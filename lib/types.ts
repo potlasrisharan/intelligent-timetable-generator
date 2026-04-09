@@ -135,6 +135,72 @@ export type Conflict = {
   status: "open" | "resolved"
 }
 
+export type AiSuggestionImpact = "high" | "medium" | "low"
+export type AiSuggestionCategory = "quality" | "conflict" | "reschedule" | "assistant"
+
+export type AiSuggestion = {
+  id: string
+  title: string
+  detail: string
+  impact: AiSuggestionImpact
+  category: AiSuggestionCategory
+}
+
+export type QualityReview = {
+  generatedAt: string
+  score: number
+  summary: string
+  strengths: string[]
+  suggestions: AiSuggestion[]
+  assistantNote?: string | null
+}
+
+export type ConflictPrediction = {
+  id: string
+  title: string
+  detail: string
+  severity: ConflictSeverity
+  confidence: number
+  affected: string[]
+  suggestion: string
+}
+
+export type ConflictPredictionResponse = {
+  generatedAt: string
+  summary: string
+  predictions: ConflictPrediction[]
+  assistantNote?: string | null
+}
+
+export type AutoRescheduleChange = {
+  entryId: string
+  courseCode: string
+  fromLabel: string
+  toLabel: string
+  rationale: string
+}
+
+export type AutoRescheduleResult = {
+  ok: boolean
+  applied: boolean
+  conflictId: string
+  resolution: string
+  summary: string
+  changes: AutoRescheduleChange[]
+  assistantNote?: string | null
+}
+
+export type AiChatMessage = {
+  role: "user" | "assistant"
+  content: string
+}
+
+export type AiChatResponse = {
+  ok: boolean
+  reply: string
+  suggestedPrompts: string[]
+}
+
 export type AuditEvent = {
   id: string
   actor: string

@@ -11,6 +11,13 @@ pip install -r backend/requirements.txt
 uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
+Optional AI environment variables:
+
+```bash
+export GROQ_API_KEY=your-groq-api-key
+export GROQ_MODEL=llama-3.1-8b-instant
+```
+
 ## Main routes
 
 - `GET /health`
@@ -20,5 +27,9 @@ uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 - `GET /api/v1/resources/*`
 - `GET /api/v1/schedule/*`
 - `GET /api/v1/reports/*`
+- `GET /api/v1/ai/quality-review`
+- `GET /api/v1/ai/conflict-prediction`
+- `POST /api/v1/ai/chat`
+- `POST /api/v1/ai/auto-reschedule/{conflict_id}`
 
 The backend currently uses an in-memory seed store with the same shapes as the frontend contract, so it can later be swapped for Supabase/Postgres without changing the UI service layer.

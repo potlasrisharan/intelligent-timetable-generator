@@ -18,6 +18,7 @@ import type { DashboardMetrics, Section, UserRole, TimetableEntry } from "@/lib/
 import { envConfig } from "@/lib/config"
 import { scheduleService } from "@/lib/services/schedule-service"
 import { ExportTimetableButton } from "@/components/shared/export-button"
+import { DashboardAiPanels } from "@/components/ai/dashboard-ai-panels"
 
 const API_BASE = envConfig.apiBaseUrl
 
@@ -523,6 +524,10 @@ export function DashboardRenderer({
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
+        <div className="lg:col-span-2">
+          <DashboardAiPanels />
+        </div>
+
         {/* CSV Upload */}
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader>
