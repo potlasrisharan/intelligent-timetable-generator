@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import urllib.error
 import urllib.request
@@ -10,6 +11,8 @@ from typing import Any
 
 from .config import settings
 from .store import store
+
+logger = logging.getLogger(__name__)
 
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 TIMESLOT_ORDER = ["p1", "p2", "p3", "p4", "p5", "p6", "p7"]
@@ -117,6 +120,7 @@ def _sync_entry(entry_id: str, payload: dict[str, Any]) -> None:
 
 def _groq_chat(messages: list[dict[str, str]], max_completion_tokens: int = 500) -> str | None:
     if not settings.groq_api_key:
+        logger.warning("Groq API key is not configured; using fallback AI response.")
         return None
 
     payload = json.dumps(
@@ -141,11 +145,32 @@ def _groq_chat(messages: list[dict[str, str]], max_completion_tokens: int = 500)
     try:
         with urllib.request.urlopen(request, timeout=12) as response:
             data = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError):
+    except urllib.error.HTTPError as error:
+        error_body = ""
+        try:
+            error_body = error.read().decode("utf-8")
+        except Exception:
+            error_body = "<unavailable>"
+        logger.warning(
+            "Groq chat completion failed with HTTP %s for model %s: %s",
+            error.code,
+            settings.groq_model,
+            error_body,
+        )
+        return None
+    except urllib.error.URLError as error:
+        logger.warning("Groq chat completion failed with network error: %s", error)
+        return None
+    except TimeoutError:
+        logger.warning("Groq chat completion timed out for model %s.", settings.groq_model)
+        return None
+    except json.JSONDecodeError as error:
+        logger.warning("Groq chat completion returned invalid JSON: %s", error)
         return None
 
     choices = data.get("choices") or []
     if not choices:
+        logger.warning("Groq chat completion returned no choices for model %s.", settings.groq_model)
         return None
 
     message = choices[0].get("message") or {}
