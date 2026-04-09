@@ -1,0 +1,7 @@
+section,department,semester,student_count,advisor,no_classes_after,blocked_slots,notes
+A,CSE,3,55,Dr. Rajesh Kumar,p5,"Mon P1","Section A has placement training Monday morning. No classes after P5."
+B,CSE,3,50,Dr. Priya Sharma,,"Tue P6, Tue P7","Section B has sports activities Tuesday evening."
+C,CSE,3,48,Prof. Anand Reddy,p6,"Wed P1, Wed P2","Section C has industry visit Wednesday morning. No classes after P6."
+D,CSE,5,52,Dr. Meena Iyer,,"Thu P5, Thu P6, Thu P7","Section D has club activities Thursday afternoon."
+E,CSE,5,45,Dr. Suresh Babu,p4,"Fri P1, Fri P2, Fri P3","Section E has only morning free on Friday for seminars. No classes after P4 on all days."
+F,CSE,5,58,Prof. Kavitha Nair,,"","No special constraints for section F."

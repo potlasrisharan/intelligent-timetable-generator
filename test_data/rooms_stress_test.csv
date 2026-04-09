@@ -1,0 +1,9 @@
+name,capacity,room_type,block,department,unavailable_slots,notes
+Room A-101,60,CLASSROOM,Main Block,CSE,"Mon P1, Fri P7","Reserved for departmental meetings Monday morning and Friday evening."
+Room A-102,45,CLASSROOM,Main Block,CSE,"","No restrictions."
+Room A-103,55,CLASSROOM,Main Block,CSE,"Wed P4, Wed P5, Wed P6","Locked for faculty development program every Wednesday afternoon."
+Room A-104,40,CLASSROOM,Main Block,CSE,"Thu P1, Thu P2","External examiner visit every Thursday morning."
+Lab-1,35,LAB,CS Block,CSE,"Tue P6, Tue P7, Fri P1, Fri P2","Hardware maintenance every Tuesday evening and Friday morning."
+Lab-2,30,LAB,CS Block,CSE,"Mon P5, Mon P6, Mon P7","Lab assistant unavailable Monday afternoon."
+Lab-3,40,LAB,CS Block,CSE,"","Fully available all week."
+Seminar Hall,120,CLASSROOM,Admin Block,CSE,"Mon P1, Mon P2, Mon P3, Tue P1, Tue P2, Tue P3, Wed P1, Wed P2, Wed P3, Thu P1, Thu P2, Thu P3, Fri P1, Fri P2, Fri P3","Seminar Hall is reserved for guest lectures every morning. Available only afternoons."

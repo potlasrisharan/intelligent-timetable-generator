@@ -1,0 +1,11 @@
+code,name,department,semester,theory_hours,practical_hours,faculty_name,sections,required_room,lab_required,notes
+CS301,Data Structures,CSE,3,3,2,Dr. Rajesh Kumar,"A,B,C",,,Must have lab sessions in a room with at least 40 seats.
+CS302,Operating Systems,CSE,3,4,0,Dr. Priya Sharma,"A,B,C",,false,Theory only. Dr. Sharma prefers Room A-101.
+CS303,Database Management,CSE,3,3,2,Prof. Anand Reddy,"A,B,C",Lab-1,true,DBMS lab must always be in Lab-1 due to Oracle installation.
+CS304,Computer Networks,CSE,3,3,0,Prof. Kavitha Nair,"A,B,C",,false,
+CS305,Software Engineering,CSE,3,2,0,Dr. Meena Iyer,"A,B",,,
+CS501,Machine Learning,CSE,5,3,2,Dr. Suresh Babu,"D,E,F",Lab-2,true,ML lab requires GPU workstations only available in Lab-2.
+CS502,Cloud Computing,CSE,5,3,2,Dr. Venkat Rao,"D,E,F",Lab-3,true,Cloud lab needs Docker environment in Lab-3.
+CS503,Compiler Design,CSE,5,4,0,Prof. Lakshmi Devi,"D,E,F",,false,Theory heavy. Prefer large classrooms.
+CS504,Artificial Intelligence,CSE,5,3,0,Dr. Meena Iyer,"D,E",,,AI theory. No lab component.
+CS505,Cyber Security,CSE,5,2,2,Dr. Priya Sharma,"D,F",Lab-1,true,Security lab requires isolated network in Lab-1.

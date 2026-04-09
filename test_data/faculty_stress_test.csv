@@ -1,0 +1,9 @@
+name,designation,department,max_periods_per_day,weekly_load,availability,unavailable_slots,preferences,notes
+Dr. Rajesh Kumar,Professor,CSE,3,14,"Mon-Thu, no p1","Wed P5, Thu P6",Room A-101,"Cannot take early morning classes. Prefers afternoon slots."
+Dr. Priya Sharma,Associate Professor,CSE,4,16,"Mon-Fri, no p7","Mon P1, Tue P1",Lab-1,"Dr. Sharma has a weekly research meeting Monday and Tuesday morning."
+Prof. Anand Reddy,Assistant Professor,CSE,2,10,"Mon Wed Fri","Thu P3, Thu P4, Fri P5",Room A-102,"Prof. Reddy is part-time and only available Mon/Wed/Fri. No classes Thursday afternoon."
+Dr. Meena Iyer,Professor,CSE,5,18,"Mon-Fri, all day","","","No restrictions. Full-time availability."
+Dr. Suresh Babu,Associate Professor,CSE,3,12,"Tue-Fri, no p1 no p2","Mon P1, Mon P2, Mon P3, Mon P4, Mon P5, Mon P6, Mon P7",Lab-2,"Dr. Babu is on leave every Monday. Cannot take first two periods on other days."
+Prof. Kavitha Nair,Assistant Professor,CSE,4,14,"Mon-Fri","Wed P4, Wed P5, Wed P6, Thu P4, Thu P5",Room A-103,"Faculty meeting every Wednesday and Thursday afternoon."
+Dr. Venkat Rao,Professor,CSE,3,10,"Mon Tue Wed","Thu P1, Thu P2, Thu P3, Thu P4, Thu P5, Thu P6, Thu P7, Fri P1, Fri P2, Fri P3, Fri P4, Fri P5, Fri P6, Fri P7",,"Available only first half of the week. Absolutely no Thursday or Friday."
+Prof. Lakshmi Devi,Assistant Professor,CSE,4,16,"Mon-Fri, no p6 no p7","","","Cannot take last two periods of any day due to commute constraints."

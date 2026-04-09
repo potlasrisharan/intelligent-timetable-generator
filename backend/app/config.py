@@ -22,7 +22,7 @@ class Settings:
         _split_csv(
             os.getenv(
                 "BACKEND_CORS_ORIGINS",
-                "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,https://intelligent-timetable-generator.vercel.app",
+                "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,https://intelligent-timetable-generator.vercel.app,https://sharan.quest,https://timetablex.sharan.quest",
             )
         )
     )
