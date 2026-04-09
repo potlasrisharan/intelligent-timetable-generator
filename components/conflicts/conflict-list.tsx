@@ -21,7 +21,7 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
           c.id === conflictId ? { ...c, status: "resolved" } : c
         )
       )
-    } catch (e) {
+    } catch {
       alert("Failed to resolve conflict. Check network.")
     } finally {
       setResolving(null)

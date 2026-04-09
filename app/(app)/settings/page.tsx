@@ -1,37 +1,39 @@
-import { Globe, Key, Server, ShieldCheck, SlidersHorizontal } from "lucide-react"
+import { Lock, Settings2, ShieldCheck, SlidersHorizontal } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
-import { StatusBadge } from "@/components/shared/status-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { envConfig, isApiConfigured, isSupabaseConfigured } from "@/lib/config"
 
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Insights / settings"
-        title="Deployment, auth, and generation preferences"
-        description="This workspace is already shaped around your free deployment stack, with clean integration contracts for Supabase and FastAPI."
+        title="Workspace settings"
+        description="Review the main scheduling and access preferences used in this prototype."
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-xl text-white">Free-stack deployment map</CardTitle>
-            <p className="text-sm text-slate-400">
-              Platform wiring chosen for the hackathon build and later production hardening.
-            </p>
+            <CardTitle className="text-xl text-white">Scheduling defaults</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
             {[
-              ["Frontend", "Next.js on Vercel"],
-              ["Backend API", "FastAPI on Render"],
-              ["Solver", "OR-Tools on Render worker"],
-              ["Database + Auth", "Supabase Postgres + Supabase Auth"],
-              ["Storage", "Supabase Storage"],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-[1.15rem] border border-white/8 bg-white/4 px-4 py-3">
-                <p className="font-data text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">{label}</p>
-                <p className="mt-2 text-sm font-medium text-white">{value}</p>
+              {
+                icon: Settings2,
+                title: "Regeneration keeps locked slots in place.",
+              },
+              {
+                icon: SlidersHorizontal,
+                title: "Scheduling favors balanced faculty load, compact days, and room fit.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Exports remain available in printable and spreadsheet formats.",
+              },
+            ].map(({ icon: Icon, title }) => (
+              <div key={title} className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
+                <Icon className="mb-3 size-4 text-amber-200" />
+                {title}
               </div>
             ))}
           </CardContent>
@@ -39,73 +41,52 @@ export default function SettingsPage() {
 
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-xl text-white">Environment contract</CardTitle>
-            <p className="text-sm text-slate-400">
-              Frontend env assumptions are already reserved so the backend can plug in without route rewrites.
-            </p>
+            <CardTitle className="text-xl text-white">Access roles</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
             <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-data text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
-                    NEXT_PUBLIC_API_BASE_URL
-                  </p>
-                  <p className="mt-2 text-sm text-white">{envConfig.apiBaseUrl}</p>
-                </div>
-                <StatusBadge tone={isApiConfigured ? "active" : "inactive"}>
-                  {isApiConfigured ? "local default" : "not set"}
-                </StatusBadge>
-              </div>
+              <p className="font-medium text-white">Admin</p>
+              <p className="mt-2">Manages data, generates schedules, resolves conflicts, and publishes updates.</p>
             </div>
             <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-data text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">
-                    Supabase auth keys
-                  </p>
-                  <p className="mt-2 text-sm text-white">{envConfig.supabaseUrl}</p>
-                </div>
-                <StatusBadge tone={isSupabaseConfigured ? "healthy" : "warning"}>
-                  {isSupabaseConfigured ? "configured" : "demo mode"}
-                </StatusBadge>
-              </div>
+              <p className="font-medium text-white">Teacher</p>
+              <p className="mt-2">Views assigned classes and checks the current timetable.</p>
+            </div>
+            <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
+              <p className="font-medium text-white">Student</p>
+              <p className="mt-2">Views the published class schedule for the assigned section.</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-xl text-white">Auth preferences</CardTitle>
+            <CardTitle className="text-xl text-white">Workspace notes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
             <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              <Key className="mb-3 size-4 text-amber-200" />
-              Demo auth currently uses local session storage, but the contract is shaped for Supabase sign-in and password reset flows.
+              <Lock className="mb-3 size-4 text-amber-200" />
+              Use the configuration pages to manage courses, faculty, rooms, sections, timeslots, and holidays.
             </div>
             <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
               <ShieldCheck className="mb-3 size-4 text-emerald-200" />
-              Role names already match the PRD: Super Admin, Department Admin, Faculty, and Student.
+              Conflicts should be resolved before publishing a new schedule version.
             </div>
           </CardContent>
         </Card>
 
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-xl text-white">Generation defaults</CardTitle>
+            <CardTitle className="text-xl text-white">Version handling</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
             <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              <Server className="mb-3 size-4 text-amber-200" />
-              Default mode: partial regenerate with locked-slot preservation.
+              <Settings2 className="mb-3 size-4 text-amber-200" />
+              Draft and active schedules remain separated so changes can be reviewed safely.
             </div>
             <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
               <SlidersHorizontal className="mb-3 size-4 text-amber-200" />
-              Solver preferences prioritize faculty gap reduction, workload balance, and room utilization.
-            </div>
-            <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              <Globe className="mb-3 size-4 text-slate-200" />
-              Export behavior assumes PDF and Excel generation from the FastAPI backend.
+              Use the editor to check placements before promoting a draft to the active timetable.
             </div>
           </CardContent>
         </Card>

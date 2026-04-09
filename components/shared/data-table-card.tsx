@@ -16,7 +16,7 @@ export function DataTableCard({
   rows,
 }: {
   title: string
-  subtitle: string
+  subtitle?: string
   headers: string[]
   rows: ReactNode[][]
 }) {
@@ -24,7 +24,7 @@ export function DataTableCard({
     <Card className="glass-panel section-ring rounded-[1.4rem]">
       <CardHeader className="space-y-2">
         <CardTitle className="text-xl text-white">{title}</CardTitle>
-        <p className="text-sm text-slate-400">{subtitle}</p>
+        {subtitle ? <p className="text-sm text-slate-400">{subtitle}</p> : null}
       </CardHeader>
       <CardContent>
         <Table>

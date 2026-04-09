@@ -42,13 +42,13 @@ export default async function RoomsPage() {
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <DataTableCard
           title="Room allocation board"
-          subtitle="Each room stays typed and capacity-aware so the solver can avoid impossible placements."
+          subtitle="Room type, capacity, and current utilization."
           headers={["Room", "Type", "Capacity", "Utilization"]}
           rows={rows}
         />
         <MiniBarList
           title="Top utilized spaces"
-          subtitle="High-traffic rooms that shape the feasibility envelope."
+          subtitle="Rooms with the highest current usage."
           data={rooms.map((room) => ({ label: room.name, value: room.utilization, emphasis: room.block }))}
           tone="amber"
         />

@@ -34,7 +34,7 @@ export default async function FacultyPage() {
       <PageHeader
         eyebrow="Configuration / faculty"
         title="Faculty availability and workload control"
-        description="Balance daily teaching limits, respect availability windows, and surface overloads before the solver locks them into the timetable."
+        description="Track faculty availability, teaching load, and scheduling status."
         actions={
           <>
             <Button variant="outline" className="rounded-2xl border-white/8 bg-white/5 text-slate-100">
@@ -58,7 +58,7 @@ export default async function FacultyPage() {
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         <DataTableCard
           title="Faculty workload board"
-          subtitle="Mock adapter mirrors the future faculty endpoint, including preferences and max daily periods."
+          subtitle="Availability, teaching load, preferences, and current status."
           headers={["Faculty", "Availability", "Load", "Preferences", "Status"]}
           rows={rows}
         />
@@ -73,7 +73,7 @@ export default async function FacultyPage() {
             <div className="rounded-[1.15rem] border border-amber-300/15 bg-amber-300/10 p-4">
               <p className="font-medium text-amber-100">Sara Joseph is over cap on Tuesday</p>
               <p className="mt-2 text-sm leading-6 text-amber-50/80">
-                One theory block needs to move to Thursday or be reassigned to keep the daily cap contract intact.
+                One theory block needs to move to Thursday or be reassigned to stay within the daily cap.
               </p>
             </div>
             <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4 text-sm leading-6 text-slate-300">

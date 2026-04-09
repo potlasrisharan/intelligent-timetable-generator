@@ -8,7 +8,6 @@ export function MetricCard({
   detail,
   icon: Icon,
   tone = "silver",
-  progress,
 }: {
   label: string
   value: string
@@ -26,7 +25,7 @@ export function MetricCard({
         tone === "healthy" && "metric-glow-healthy"
       )}
     >
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
             <p className="text-sm text-slate-400">{label}</p>
@@ -39,24 +38,6 @@ export function MetricCard({
             <Icon className="size-5" />
           </div>
         </div>
-        {typeof progress === "number" ? (
-          <div className="space-y-2">
-            <div className="h-2 rounded-full bg-white/8">
-              <div
-                className={cn(
-                  "h-2 rounded-full",
-                  tone === "silver" && "bg-gradient-to-r from-slate-200 via-slate-400 to-slate-500",
-                  tone === "amber" && "bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-400",
-                  tone === "healthy" && "bg-gradient-to-r from-emerald-300 via-green-400 to-emerald-500",
-                )}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="font-data text-[0.72rem] uppercase tracking-[0.24em] text-slate-400">
-              {progress}% benchmark alignment
-            </p>
-          </div>
-        ) : null}
       </CardContent>
     </Card>
   )

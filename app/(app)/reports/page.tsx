@@ -1,7 +1,6 @@
 import { Download, FileText } from "lucide-react"
 import { MiniBarList } from "@/components/shared/mini-bar-list"
 import { PageHeader } from "@/components/shared/page-header"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { reportService } from "@/lib/services/report-service"
 import { ExportTimetableButton } from "@/components/shared/export-button"
@@ -15,7 +14,7 @@ export default async function ReportsPage() {
       <PageHeader
         eyebrow="Insights / reports"
         title="Utilization, workload, and export reporting"
-        description="Give judges a full picture of schedule quality with room usage, faculty gap pressure, compactness, and polished export surfaces."
+        description="Review room usage, faculty load, compactness, and available exports."
         actions={
           <ExportTimetableButton />
         }
@@ -30,9 +29,7 @@ export default async function ReportsPage() {
       <Card className="glass-panel section-ring rounded-[1.5rem]">
         <CardHeader className="space-y-2">
           <CardTitle className="text-xl text-white">Export hub</CardTitle>
-          <p className="text-sm text-slate-400">
-            These controls match the eventual PDF/Excel backend capabilities described in the architecture.
-          </p>
+          <p className="text-sm text-slate-400">Download timetable outputs in the available formats.</p>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           {reportSummary.exports.map((item, index) => (

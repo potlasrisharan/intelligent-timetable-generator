@@ -4,7 +4,6 @@ import { MetricCard } from "@/components/shared/metric-card"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { courseService } from "@/lib/services/course-service"
 import { faculty } from "@/lib/mock-data"
 
@@ -40,8 +39,8 @@ export default async function CoursesPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Configuration / courses"
-        title="Course intelligence and weekly load design"
-        description="Define theory and lab hours, map faculty ownership, and keep course rules aligned with the solver contract before generation begins."
+        title="Course catalog"
+        description="Manage weekly load, faculty ownership, and scheduling status for each course."
         actions={
           <>
             <Button variant="outline" className="rounded-2xl border-white/8 bg-white/5 text-slate-100">
@@ -58,39 +57,16 @@ export default async function CoursesPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="Configured courses" value={String(courses.length)} detail="Across all active departments." icon={CheckCircle2} progress={92} />
-        <MetricCard label="Lab-backed modules" value={String(courses.filter((item) => item.labRequired).length)} detail="Consecutive practical windows enforced." icon={FlaskConical} tone="amber" progress={71} />
-        <MetricCard label="Departments in scope" value={String(departments.length)} detail="Hackathon dataset loaded and solvable." icon={FileText} progress={80} />
+        <MetricCard label="Lab-backed modules" value={String(courses.filter((item) => item.labRequired).length)} detail="Courses that require practical sessions." icon={FlaskConical} tone="amber" progress={71} />
+        <MetricCard label="Departments in scope" value={String(departments.length)} detail="Departments currently using the workspace." icon={FileText} progress={80} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <DataTableCard
-          title="Course catalog"
-          subtitle="API-ready structure for the FastAPI course endpoint and validation pipeline."
-          headers={["Course", "Department", "Weekly load", "Faculty", "Status"]}
-          rows={rows}
-        />
-
-        <Card className="glass-panel section-ring rounded-[1.5rem]">
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-xl text-white">Constraint notes</CardTitle>
-            <p className="text-sm text-slate-400">
-              These UI checks mirror the hard rules that the backend and solver will enforce.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              "Theory + practical hours must total above zero.",
-              "Lab-required courses automatically demand lab room compatibility.",
-              "Combined sections only merge within the same semester.",
-              "Practical sessions remain consecutive during generation.",
-            ].map((item) => (
-              <div key={item} className="rounded-[1.15rem] border border-white/8 bg-white/4 px-4 py-3 text-sm leading-6 text-slate-300">
-                {item}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+      <DataTableCard
+        title="Course catalog"
+        subtitle="Weekly load, department, faculty, and scheduling status."
+        headers={["Course", "Department", "Weekly load", "Faculty", "Status"]}
+        rows={rows}
+      />
     </div>
   )
 }

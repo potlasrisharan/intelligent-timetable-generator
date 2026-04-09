@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import {
-  BookOpen, Calendar, CheckCircle2, Clock,
+  BookOpen, Calendar, Clock,
   Cpu, GitBranch, Upload, WandSparkles, Zap,
-  Brain, BarChart3, Layers, GraduationCap,
+  BarChart3, Layers, GraduationCap,
 } from "lucide-react"
 
 import { PageHeader } from "@/components/shared/page-header"
@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authService } from "@/lib/services/auth-service"
-import type { DashboardMetrics, Course, Section, UserRole, TimetableEntry } from "@/lib/types"
+import type { DashboardMetrics, Section, UserRole, TimetableEntry } from "@/lib/types"
 import { envConfig } from "@/lib/config"
 import { scheduleService } from "@/lib/services/schedule-service"
 import { ExportTimetableButton } from "@/components/shared/export-button"
@@ -120,11 +120,11 @@ function SolverProgressBar({ status, progress, result }: {
   const isDone = status === "done"
 
   const phaseLabel =
-    progress < 15 ? "Initialising solver…" :
-    progress < 30 ? "Loading constraints…" :
-    progress < 50 ? "Building CP-SAT model…" :
-    progress < 70 ? "OR-Tools solving…" :
-    progress < 90 ? "Writing schedule back…" :
+    progress < 15 ? "Preparing timetable…" :
+    progress < 30 ? "Loading data…" :
+    progress < 50 ? "Checking rules…" :
+    progress < 70 ? "Generating schedule…" :
+    progress < 90 ? "Saving results…" :
     isDone
       ? isSuccess
         ? `✓ Done — Quality Score: ${r?.quality_score ?? "—"}`
@@ -156,11 +156,9 @@ function SolverProgressBar({ status, progress, result }: {
 // ─────────────────────────────────────────────────────────────
 export function DashboardRenderer({
   metrics,
-  courses,
   sections,
 }: {
   metrics: DashboardMetrics
-  courses: Course[]
   sections: Section[]
 }) {
   const [role, setRole] = useState<UserRole | null>(null)
@@ -209,7 +207,7 @@ export function DashboardRenderer({
     if (jobStatus === "done" && solverResult?.status === "success") {
       scheduleService.getEditorEntries().then(setTimetableEntries)
     }
-  }, [jobStatus, result])
+  }, [jobStatus, solverResult?.status])
 
   if (!role) return null
 
@@ -250,7 +248,7 @@ export function DashboardRenderer({
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader>
             <CardTitle className="text-xl text-white">This Week&apos;s Schedule</CardTitle>
-            <p className="text-sm text-slate-400">All classes assigned to your section by the OR-Tools scheduler.</p>
+            <p className="text-sm text-slate-400">All classes currently assigned to your section.</p>
           </CardHeader>
           <CardContent>
             {published && myEntries.length > 0 ? (
@@ -444,7 +442,7 @@ export function DashboardRenderer({
       <PageHeader
         eyebrow="Command Center"
         title="Timetable Generator Setup"
-        description="Configure infrastructure, upload constraints, and generate optimized schedules using OR-Tools CP-SAT."
+        description="Upload your data, review the current setup, and generate the timetable."
         actions={
           <>
             <StatusBadge tone={isSuccess ? "healthy" : isError ? "critical" : "active"}>
@@ -465,7 +463,7 @@ export function DashboardRenderer({
                 disabled={isGenerating}
               >
                 <WandSparkles className="size-4" />
-                {isGenerating ? "Running OR-Tools…" : "Generate Timetable"}
+                {isGenerating ? "Generating..." : "Generate Timetable"}
               </Button>
               <SolverProgressBar status={jobStatus} progress={progress} result={result} />
             </div>
@@ -486,9 +484,9 @@ export function DashboardRenderer({
               border: "border-emerald-500/20 bg-emerald-500/8",
             },
             {
-              label: "Solver Status",
+              label: "Status",
               value: solverResult?.solver_status ?? "OPTIMAL",
-              sub: "OR-Tools CP-SAT",
+              sub: isSuccess ? "Latest generation" : "Ready to run",
               icon: Cpu,
               tone: "text-blue-300",
               border: "border-blue-500/20 bg-blue-500/8",
@@ -504,7 +502,7 @@ export function DashboardRenderer({
             {
               label: "Generation Time",
               value: solverResult?.elapsed_ms ? `${solverResult.elapsed_ms}ms` : "< 30s",
-              sub: "Below target threshold",
+              sub: "Most recent run",
               icon: Zap,
               tone: "text-amber-300",
               border: "border-amber-500/20 bg-amber-500/8",
@@ -524,34 +522,13 @@ export function DashboardRenderer({
         </div>
       )}
 
-      {/* XAI feature callout after generate */}
-      {isSuccess && (
-        <div className="flex items-start gap-4 rounded-2xl border border-violet-500/25 bg-violet-500/10 p-5 ring-1 ring-white/5">
-          <Brain className="mt-0.5 size-5 shrink-0 text-violet-300" />
-          <div>
-             <p className="font-semibold text-violet-100">XAI Transparency Ready</p>
-            <p className="mt-1 text-sm text-violet-100/70">
-              The timetable has been generated. Navigate to the{" "}
-              <a href="/editor" className="underline text-violet-300 hover:text-violet-200">Editor</a>{" "}
-              and click any slot to see a real-time constraint trace explaining exactly why OR-Tools
-              chose that room, faculty, and period.
-            </p>
-          </div>
-          {solverResult?.solver_status && (
-            <div className="ml-auto shrink-0">
-              <CheckCircle2 className="size-6 text-emerald-400" />
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="grid gap-6 lg:grid-cols-2">
         {/* CSV Upload */}
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader>
             <CardTitle className="text-xl text-white">Bulk Configuration Upload</CardTitle>
             <CardDescription className="text-slate-400">
-               Upload CSV files containing subjects, faculty mapping, and section targets.
+               Upload CSV files for rooms, courses, faculty, or sections.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -563,8 +540,8 @@ export function DashboardRenderer({
               <div className="rounded-full bg-white/10 p-3 mb-3 text-slate-300 group-hover:text-amber-200">
                 <Upload className="size-6" />
               </div>
-              <h3 className="font-semibold text-white">Click to Upload Real Dataset</h3>
-              <p className="mt-1 text-sm text-slate-400">Supports .csv for Rooms (capacity header) or Courses (theory_hours header)</p>
+              <h3 className="font-semibold text-white">Click to upload data</h3>
+              <p className="mt-1 text-sm text-slate-400">Supported: room and course CSV files.</p>
             </div>
             {poolItems.length > 0 && (
               <div className="space-y-2">
@@ -583,7 +560,7 @@ export function DashboardRenderer({
         <Card className="glass-panel section-ring rounded-[1.5rem]">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl text-white">Manual Database Entry</CardTitle>
+              <CardTitle className="text-xl text-white">Manual entry</CardTitle>
               <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg">
                 <button
                   onClick={() => setEntryMode("infrastructure")}
@@ -600,7 +577,7 @@ export function DashboardRenderer({
               </div>
             </div>
             <CardDescription className="text-slate-400">
-              {entryMode === "infrastructure" ? "Explicitly define classrooms and section branch details." : "Add a subject explicitly mapped to a teacher and section."}
+              {entryMode === "infrastructure" ? "Add rooms and sections directly." : "Add a course and assign it to a teacher and section."}
             </CardDescription>
           </CardHeader>
           <CardContent>

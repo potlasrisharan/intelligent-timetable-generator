@@ -30,7 +30,7 @@ export function ReportExportAction({ label }: { label: string }) {
       a.click()
       a.remove()
       window.URL.revokeObjectURL(url)
-    } catch (e) {
+    } catch {
       alert(`Network error exporting ${label}`)
     } finally {
       setIsExporting(false)

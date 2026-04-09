@@ -4,11 +4,8 @@ import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  ArrowRight,
-  Chrome,
   Eye,
   EyeOff,
-  Github,
   Lock,
   Mail,
 } from "lucide-react"
@@ -16,10 +13,8 @@ import { BrandMark } from "@/components/shared/brand-mark"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { authService } from "@/lib/services/auth-service"
 
 export function LoginCardSection({ nextPath }: { nextPath: string }) {
@@ -31,27 +26,17 @@ export function LoginCardSection({ nextPath }: { nextPath: string }) {
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-transparent text-foreground">
-
       <header className="relative z-10 flex items-center justify-between px-6 py-5">
         <BrandMark />
-        <Button asChild variant="outline" className="rounded-full border-white/10 bg-white/5 text-slate-200">
-          <Link href="/dashboard">
-            Demo workspace
-            <ArrowRight className="size-4" />
-          </Link>
-        </Button>
       </header>
 
       <div className="relative z-10 grid min-h-[calc(100vh-88px)] place-items-center px-4 pb-10">
         <Card className="glass-panel-strong section-ring w-full max-w-md rounded-[1.8rem] border-white/10 bg-[rgba(9,15,28,0.72)]">
           <CardHeader className="space-y-3">
-            <p className="font-data text-[0.72rem] uppercase tracking-[0.26em] text-amber-200/80">
-              Premium academic glass
-            </p>
             <div className="space-y-2">
               <CardTitle className="text-3xl text-white">Welcome back</CardTitle>
               <CardDescription className="text-base leading-6 text-slate-300">
-                Sign in to manage sections, solver runs, conflict resolution, exports, and version history.
+                Sign in to access your timetable workspace.
               </CardDescription>
             </div>
           </CardHeader>
@@ -127,13 +112,7 @@ export function LoginCardSection({ nextPath }: { nextPath: string }) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Checkbox id="remember" className="border-white/15 data-[state=checked]:bg-amber-200 data-[state=checked]:text-slate-950" />
-                <Label htmlFor="remember" className="text-slate-400">
-                  Keep demo session active
-                </Label>
-              </div>
+            <div className="flex justify-end">
               <Link href="/auth/forgot-password" className="text-sm text-slate-200 transition hover:text-white">
                 Forgot password?
               </Link>
@@ -158,33 +137,12 @@ export function LoginCardSection({ nextPath }: { nextPath: string }) {
                 }
               }}
             >
-              {submitting ? "Preparing workspace..." : "Continue to dashboard"}
+              {submitting ? "Signing in..." : "Continue"}
             </Button>
-
-            <div className="relative">
-              <Separator className="bg-white/8" />
-              <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/8 bg-[rgba(7,12,23,0.9)] px-3 py-1 font-data text-[0.62rem] uppercase tracking-[0.26em] text-slate-500">
-                or continue with
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/5 text-slate-100">
-                <Github className="size-4" />
-                GitHub
-              </Button>
-              <Button variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/5 text-slate-100">
-                <Chrome className="size-4" />
-                Google
-              </Button>
-            </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col items-start gap-3 border-t border-white/8 pt-6 text-sm text-slate-400">
-            <p>Use the demo credentials shown above for the hackathon flow.</p>
-            <p className="font-data text-[0.7rem] uppercase tracking-[0.24em] text-slate-500">
-              Supabase auth contract already reserved via env config
-            </p>
+          <CardFooter className="border-t border-white/8 pt-6 text-sm text-slate-400">
+            Use one of the demo accounts above to enter the prototype.
           </CardFooter>
         </Card>
       </div>

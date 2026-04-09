@@ -35,12 +35,12 @@ export default async function SectionsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="Sections in play" value={String(sections.length)} detail="Ready to route through the editor." icon={Layers3} progress={78} />
         <MetricCard label="Students covered" value={String(sections.reduce((sum, section) => sum + section.studentCount, 0))} detail="Across all configured cohorts." icon={Users} progress={86} />
-        <MetricCard label="High compactness sections" value={String(sections.filter((section) => section.compactness >= 85).length)} detail="Already strong for judge-facing demo flow." icon={GraduationCap} tone="amber" progress={66} />
+        <MetricCard label="High compactness sections" value={String(sections.filter((section) => section.compactness >= 85).length)} detail="Sections with tightly grouped schedules." icon={GraduationCap} tone="amber" progress={66} />
       </div>
 
       <DataTableCard
         title="Section roster"
-        subtitle="Section contracts carry student counts, advisor ownership, and compactness targets into the schedule engine."
+        subtitle="Student counts, advisors, and compactness overview."
         headers={["Section", "Advisor", "Student count", "Compactness"]}
         rows={rows}
       />

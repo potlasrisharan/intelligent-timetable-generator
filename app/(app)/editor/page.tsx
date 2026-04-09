@@ -1,4 +1,4 @@
-import { Lock, PenTool } from "lucide-react"
+import { Lock, Users } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { TimetableBoard } from "@/components/shared/timetable-board"
@@ -15,7 +15,6 @@ export default async function EditorPage() {
   const lockedSlots = await scheduleService.getLockedSlots()
   const [activeSection] = sections
 
-  // Fetch XAI explanations from backend (fallback to empty array — UI still works)
   const xaiData = await getJsonWithFallback<XaiEntry[]>("/schedule/explain", [])
 
   return (
@@ -23,7 +22,7 @@ export default async function EditorPage() {
       <PageHeader
         eyebrow="Scheduling / editor"
         title="Draft timetable editor"
-        description="Click any scheduled slot to reveal why OR-Tools placed it there — full constraint trace with XAI reasoning."
+        description="Review the draft timetable, inspect section details, and adjust placements before publishing."
         actions={
           <>
             <StatusBadge tone="active">Editing {activeSection.name}</StatusBadge>
@@ -46,8 +45,7 @@ export default async function EditorPage() {
               </p>
             </div>
             <p className="text-sm text-slate-400">
-              Click any slot to open the{" "}
-              <span className="font-semibold text-violet-300">XAI Constraint Trace</span> — see exactly why OR-Tools chose that room, faculty, and period.
+              Click any filled slot to view its placement details.
             </p>
           </CardHeader>
           <CardContent className="overflow-x-auto">
@@ -71,32 +69,18 @@ export default async function EditorPage() {
                   Semester {activeSection.semester} · Advisor {activeSection.advisor}
                 </p>
               </div>
+              <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
+                <Users className="mb-3 size-4 text-slate-200" />
+                <p className="font-medium text-white">{activeSection.studentCount} students</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Compactness score: {activeSection.compactness}%
+                </p>
+              </div>
               <div className="rounded-[1.15rem] border border-amber-300/16 bg-amber-300/10 p-4">
                 <p className="font-medium text-amber-100">Locked slots must survive regeneration</p>
                 <p className="mt-2 text-sm leading-6 text-amber-50/80">
-                  The current draft contains {lockedSlots.length} pinned decisions that the solver cannot relocate.
+                  The current draft contains {lockedSlots.length} pinned decisions.
                 </p>
-              </div>
-              <div className="rounded-[1.15rem] border border-violet-500/20 bg-violet-500/10 p-4">
-                <p className="font-medium text-violet-100">XAI Transparency Active</p>
-                <p className="mt-2 text-sm leading-6 text-violet-50/80">
-                  Click any filled slot to see a live constraint-satisfaction trace explaining the solver&apos;s decision. Powered by Google OR-Tools CP-SAT.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-panel section-ring rounded-[1.5rem]">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-xl text-white">Editing protocol</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm leading-6 text-slate-300">
-              <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-                <PenTool className="mb-3 size-4 text-amber-200" />
-                Manual shifts can violate soft constraints, but hard-constraint breaks remain blocked.
-              </div>
-              <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-                Lab sessions stay chained, and lunch slots remain globally protected.
               </div>
             </CardContent>
           </Card>

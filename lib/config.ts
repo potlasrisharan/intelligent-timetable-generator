@@ -3,7 +3,7 @@ export const appConfig = {
   shortName: "TTX",
   institution: "South Asian University",
   description:
-    "Premium academic scheduling frontend for timetable generation, conflict resolution, analytics, and versioned publishing.",
+    "Academic scheduling workspace for timetable generation, conflict review, and publishing.",
 } as const
 
 export const envConfig = {

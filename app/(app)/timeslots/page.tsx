@@ -13,12 +13,12 @@ export default async function TimeslotsPage() {
       <PageHeader
         eyebrow="Configuration / timeslots"
         title="Working hours, lunch policy, and period geometry"
-        description="The period matrix defines where the solver is allowed to place classes, which slots are blocked, and where labs can chain back-to-back."
+        description="Review the daily teaching periods, lunch break, and preferred lab windows."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Working days" value={String(weekdays.length)} detail="Mon-Fri schedule for the demo institution." icon={CalendarRange} progress={100} />
-        <MetricCard label="Instructional slots" value={String(timeslots.filter((slot) => !slot.isLunch).length)} detail="Available for theory and lab placement each day." icon={Clock3} progress={88} />
+        <MetricCard label="Working days" value={String(weekdays.length)} detail="Monday to Friday schedule." icon={CalendarRange} progress={100} />
+        <MetricCard label="Instructional slots" value={String(timeslots.filter((slot) => !slot.isLunch).length)} detail="Available each day for classes." icon={Clock3} progress={88} />
         <MetricCard label="Lunch window" value="1 fixed block" detail="Protected from scheduling across all departments." icon={Clock3} tone="amber" progress={100} />
       </div>
 

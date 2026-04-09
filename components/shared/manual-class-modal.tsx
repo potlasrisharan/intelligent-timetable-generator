@@ -45,7 +45,7 @@ export function ManualClassModal({ isOpen, onClose, day, timeslotId, sectionId, 
       })
       onSuccess()
       onClose()
-    } catch (e) {
+    } catch {
       alert("Failed to assign class manually")
     } finally {
       setIsSubmitting(false)

@@ -14,8 +14,8 @@ export default async function HistoryPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Insights / history"
-        title="Timetable version history and restore posture"
-        description="Track draft, active, and archived states while keeping restore-ready metadata visible for admins and judges."
+        title="Timetable version history"
+        description="Track draft, active, and archived schedules in one place."
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -80,7 +80,7 @@ export default async function HistoryPage() {
             ))}
             <div className="rounded-[1.15rem] border border-emerald-400/16 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100">
               <ShieldCheck className="mb-3 size-4" />
-              Restore operations are represented in the UI now and can later connect straight to the version-restore backend endpoint.
+              Restore actions can be reviewed here before switching back to an older version.
             </div>
           </CardContent>
         </Card>

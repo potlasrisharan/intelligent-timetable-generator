@@ -4,7 +4,6 @@ import { MetricCard } from "@/components/shared/metric-card"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { faculty, rooms } from "@/lib/mock-data"
 import { sectionService } from "@/lib/services/section-service"
 
@@ -39,8 +38,8 @@ export default async function CombinedSectionsPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Configuration / combined sections"
-        title="Merged delivery for shared academic blocks"
-        description="Handle large lectures and cross-section labs while keeping semester integrity and room capacity intact."
+        title="Combined sections"
+        description="Group sections that share a class while keeping semester alignment and room capacity clear."
         actions={
           <Button className="rounded-2xl">
             <GitBranch className="size-4" />
@@ -51,37 +50,16 @@ export default async function CombinedSectionsPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="Combined groups" value={String(combinedSections.length)} detail="Active merges in the current dataset." icon={GitBranch} progress={58} />
-        <MetricCard label="Seats bundled" value={String(combinedSections.reduce((sum, item) => sum + item.combinedStudentCount, 0))} detail="Needs large-room coverage." icon={Users} tone="amber" progress={74} />
-        <MetricCard label="Semester-safe merges" value={String(combinedSections.length)} detail="All current bundles stay semester aligned." icon={Layers3} progress={100} />
+        <MetricCard label="Seats bundled" value={String(combinedSections.reduce((sum, item) => sum + item.combinedStudentCount, 0))} detail="Students covered by shared classes." icon={Users} tone="amber" progress={74} />
+        <MetricCard label="Semester-safe merges" value={String(combinedSections.length)} detail="Current groups stay within the same semester." icon={Layers3} progress={100} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <DataTableCard
-          title="Combined section builder"
-          subtitle="These merged delivery contracts align to the future combined-sections backend resource."
-          headers={["Label", "Sections", "Combined size", "Faculty", "Assigned room"]}
-          rows={rows}
-        />
-        <Card className="glass-panel section-ring rounded-[1.5rem]">
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-xl text-white">Builder rules</CardTitle>
-            <p className="text-sm text-slate-400">
-              The UI prevents illegal bundles before they reach the solver.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm leading-6 text-slate-300">
-            <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              Same-semester sections only.
-            </div>
-            <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              Combined student count must fit the assigned room.
-            </div>
-            <div className="rounded-[1.15rem] border border-white/8 bg-white/4 p-4">
-              One faculty owner and one room per merged slot.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <DataTableCard
+        title="Combined section list"
+        subtitle="Shared classes, grouped sections, faculty owner, and assigned room."
+        headers={["Label", "Sections", "Combined size", "Faculty", "Assigned room"]}
+        rows={rows}
+      />
     </div>
   )
 }

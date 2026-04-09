@@ -69,9 +69,9 @@ export function XaiPanel({ entry, onClose }: Props) {
           </div>
           <div>
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-violet-400">
-              XAI · Constraint Trace
+              Placement details
             </p>
-            <p className="mt-0.5 text-sm font-semibold text-white">{entry.courseCode} — {entry.slotLabel}</p>
+            <p className="mt-0.5 text-sm font-semibold text-white">{entry.courseCode} - {entry.slotLabel}</p>
           </div>
         </div>
         <button
@@ -89,16 +89,16 @@ export function XaiPanel({ entry, onClose }: Props) {
           {entry.type}
         </span>
         <span className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300">
-          🏫 {entry.room}
+          Room: {entry.room}
         </span>
         <span className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300">
-          👤 {entry.facultyName.split(" ").slice(-1)[0]}
+          Faculty: {entry.facultyName}
         </span>
       </div>
 
       {/* Constraint trace steps */}
       <div className="space-y-0.5 px-5 py-4">
-        <p className="mb-3 text-[0.7rem] uppercase tracking-[0.2em] text-slate-500">Solver Constraint Trace</p>
+        <p className="mb-3 text-[0.7rem] uppercase tracking-[0.2em] text-slate-500">Placement checks</p>
         {STEPS.map((step, idx) => (
           <div
             key={idx}

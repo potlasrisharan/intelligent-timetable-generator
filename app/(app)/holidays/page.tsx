@@ -29,18 +29,18 @@ export default async function HolidaysPage() {
       <PageHeader
         eyebrow="Configuration / holidays"
         title="Academic blackout windows and calendar exceptions"
-        description="Holidays instantly reduce solver freedom, so the UI makes their impact explicit before regeneration or publish."
+        description="Keep holiday blocks and calendar exceptions visible before updating the timetable."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="Holiday blocks" value={String(holidays.length)} detail="Explicit blackout dates in the current semester." icon={CalendarRange} progress={57} />
-        <MetricCard label="Protected from scheduling" value="100%" detail="Holiday days are solver-blocked by contract." icon={ShieldCheck} progress={100} />
+        <MetricCard label="Protected from scheduling" value="100%" detail="Holiday dates are excluded from class placement." icon={ShieldCheck} progress={100} />
         <MetricCard label="Review prompt" value="Enabled" detail="Warnings appear when a new holiday invalidates a draft." icon={Sparkles} tone="amber" progress={85} />
       </div>
 
       <DataTableCard
         title="Holiday register"
-        subtitle="Scope-aware exceptions that automatically feed into the solver's blocked-slot logic."
+        subtitle="Holiday name, date, impact, and current status."
         headers={["Holiday", "Date", "Impact", "Status"]}
         rows={rows}
       />

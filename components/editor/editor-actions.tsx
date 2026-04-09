@@ -20,7 +20,7 @@ export function EditorActions() {
       // Quick mock delay to show UI loading
       await new Promise(r => setTimeout(r, 800))
       router.refresh() // Reload server component to fetch latest entries
-    } catch (e) {
+    } catch {
       alert("Failed to re-solve open slots")
     } finally {
       setIsResolving(false)
@@ -33,7 +33,7 @@ export function EditorActions() {
       const res = await fetch(`${envConfig.apiBaseUrl}/export/${type}?version_id=latest`)
       const data = await res.json()
       alert(data.message || `Exported to ${type.toUpperCase()} successfully.`)
-    } catch (e) {
+    } catch {
       alert(`Network error exporting ${type.toUpperCase()}`)
     } finally {
       setIsExporting(false)

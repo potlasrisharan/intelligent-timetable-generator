@@ -36,7 +36,7 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
         room: match.roomName,
         facultyName: match.facultyName,
         type: match.type,
-        reason: `Room ${match.roomName} assigned as the available ${match.type === "LAB" ? "LAB" : "CLASSROOM"} for this timeslot. ${match.facultyName} confirmed free with no double-booking conflict detected by OR-Tools CP-SAT.`,
+        reason: `${match.roomName} fits this ${match.type === "LAB" ? "lab" : "class"} slot, and ${match.facultyName} is available at the selected time.`,
       }
       setActiveXai((prev) => (prev?.entryId === fallback.entryId ? null : fallback))
     }
@@ -71,9 +71,6 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                 const match = scopedEntries.find(
                   (entry) => entry.day === day && entry.timeslotId === slot.id,
                 )
-                const hasXai = match
-                  ? xaiData.some((x) => x.entryId === match.id) || true
-                  : false
                 const isActive = activeXai?.entryId === match?.id
 
                 return (
@@ -111,11 +108,6 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                             <span className="font-data text-[0.72rem] uppercase tracking-[0.24em] text-slate-400">
                               {match.type}
                             </span>
-                            {hasXai && (
-                              <span className="font-data text-[0.62rem] uppercase tracking-[0.18em] text-violet-400">
-                                XAI ▸
-                              </span>
-                            )}
                           </div>
                         </div>
                         <div className="mt-4 space-y-1 text-sm text-slate-300">
@@ -135,7 +127,7 @@ export function TimetableBoard({ entries, sectionId, xaiData = [] }: Props) {
                           Open placement
                         </p>
                         <p className="mt-3 text-sm text-slate-400">
-                           Click to assign a class manually, or run the solver.
+                           Click to assign a class manually.
                         </p>
                       </div>
                     )}
