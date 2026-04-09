@@ -42,11 +42,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     RATE_LIMITS: dict[str, tuple[int, int]] = {
         # path_prefix: (max_requests, window_seconds)
-        "/api/v1/schedule/generate": (5, 60),
-        "/api/v1/ai/chat": (20, 60),
-        "/api/v1/import/csv": (10, 60),
+        "/api/v1/schedule/generate": (10, 60),
+        "/api/v1/ai/chat": (30, 60),
+        "/api/v1/import/csv": (15, 60),
         "/api/v1/auth/sign-in": (10, 60),
         "/api/v1/export/": (15, 60),
+    }
+
+    # These paths are EXEMPT from rate limiting (high-frequency polling)
+    EXEMPT_PATHS = {
+        "/api/v1/schedule/generate/status/",
     }
 
     def __init__(self, app):
@@ -56,6 +61,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host if request.client else "unknown"
         path = request.url.path
+
+        # Skip rate limiting for exempt paths (status polling)
+        if any(path.startswith(ep) for ep in self.EXEMPT_PATHS):
+            return await call_next(request)
 
         for prefix, (max_req, window) in self.RATE_LIMITS.items():
             if path.startswith(prefix):

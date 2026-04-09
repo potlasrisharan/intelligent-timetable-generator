@@ -265,7 +265,7 @@ def generate_timetable(department_id: str, version_id: str) -> dict:
     penalty_vars: list[cp_model.IntVar] = []
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 20.0
+    solver.parameters.max_time_in_seconds = 45.0
 
     status_code = solver.Solve(model)
 
