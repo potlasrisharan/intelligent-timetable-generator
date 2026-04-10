@@ -235,8 +235,10 @@ export function DashboardRenderer({
   }, [])
 
   // Always load timetable entries (needed for Teacher + Student views, and after generate)
+  const [publishedEntries, setPublishedEntries] = useState<TimetableEntry[]>([])
   useEffect(() => {
     scheduleService.getEditorEntries().then(setTimetableEntries)
+    scheduleService.getPublishedEntries().then(setPublishedEntries)
   }, [])
 
   useEffect(() => {
@@ -269,14 +271,14 @@ export function DashboardRenderer({
   if (role === "STUDENT") {
     const mySectionId = userMeta.sectionId ?? "cse-3a"
     const mySection = sections.find((s) => s.id === mySectionId) ?? sections[0]
-    const myEntries = timetableEntries
+    const myEntries = publishedEntries
       .filter((e) => e.sectionId === mySectionId)
       .sort((a, b) => {
         const days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
         return days.indexOf(a.day) - days.indexOf(b.day)
       })
 
-    const published = timetableEntries.length > 0 || metrics.activeVersion.status === "ACTIVE"
+    const published = publishedEntries.length > 0 || metrics.activeVersion.status === "ACTIVE"
 
     return (
       <div className="space-y-6">
@@ -345,7 +347,7 @@ export function DashboardRenderer({
   // ── TEACHER VIEW — read-only, faculty-filtered ────────────
   if (role === "TEACHER") {
     const myFacultyName = userMeta.facultyName ?? userMeta.name
-    const myEntries = timetableEntries
+    const myEntries = publishedEntries
       .filter((e) => e.facultyName === myFacultyName)
       .sort((a, b) => {
         const days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
@@ -515,7 +517,16 @@ export function DashboardRenderer({
             <Button
               variant="outline"
               className="rounded-2xl border-white/8 bg-white/5 text-slate-100"
-              onClick={() => toast.success("Schedule published!", { description: "The master schedule is now visible to all teachers and students." })}
+              onClick={async () => {
+                try {
+                  const res = await scheduleService.publishTimetable()
+                  toast.success("Schedule published!", {
+                    description: res.message || "The master schedule is now visible to all teachers and students.",
+                  })
+                } catch {
+                  toast.error("Publish failed", { description: "Could not publish. Generate a timetable first." })
+                }
+              }}
             >
               <GitBranch className="size-4" />
               Publish Master Schedule

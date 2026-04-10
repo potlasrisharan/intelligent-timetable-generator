@@ -40,7 +40,7 @@ export function TeacherDashboardRenderer() {
     const fname = user?.facultyName ?? user?.name ?? ""
 
     Promise.all([
-      scheduleService.getEditorEntries(),
+      scheduleService.getPublishedEntries(),
       facultyService.getFaculty(),
     ]).then(([allEntries, allFaculty]) => {
       setEntries(allEntries.filter((e) => e.facultyName === fname))

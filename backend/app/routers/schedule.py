@@ -152,3 +152,65 @@ def add_manual_entry(payload: ManualEntryRequest) -> TimetableEntry:
     store.create("editorEntries", entry_dict)
     
     return TimetableEntry.model_validate(entry_dict)
+
+
+@router.post("/publish", response_model=dict)
+def publish_timetable() -> dict:
+    """
+    Publish the current editor timetable so it becomes visible to
+    Teacher and Student dashboards.
+    - Copies editorEntries → publishedEntries
+    - Marks the latest DRAFT version as ACTIVE
+    - Appends an audit trail event
+    """
+    from datetime import datetime
+
+    src = store.fallback if hasattr(store, "fallback") else store
+
+    # 1. Copy current editor entries to published store
+    editor_entries = src.data.get("editorEntries", [])
+    if not editor_entries:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No timetable entries to publish. Generate a timetable first.",
+        )
+
+    src.data["publishedEntries"] = list(editor_entries)
+
+    # 2. Mark DRAFT versions as ACTIVE
+    versions = src.data.get("timetableVersions", [])
+    published_version_name = None
+    for v in versions:
+        if v.get("status") == "DRAFT":
+            v["status"] = "ACTIVE"
+            v["notes"] = f"Published on {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            published_version_name = v.get("label", v.get("id", "Unknown"))
+
+    # 3. Audit trail
+    src.data.setdefault("auditTrail", []).insert(0, {
+        "id": f"evt-pub-{uuid.uuid4().hex[:6]}",
+        "actor": "Admin",
+        "action": "Published timetable",
+        "target": published_version_name or "Master Schedule",
+        "timestamp": "just now",
+        "tone": "success",
+    })
+
+    return {
+        "status": "published",
+        "entries_count": len(editor_entries),
+        "version": published_version_name or "Master Schedule",
+        "message": f"Published {len(editor_entries)} entries. Teachers and students can now see the schedule.",
+    }
+
+
+@router.get("/published-entries", response_model=list[TimetableEntry])
+def get_published_entries() -> list[TimetableEntry]:
+    """Return published timetable entries for Teacher/Student dashboards."""
+    src = store.fallback if hasattr(store, "fallback") else store
+    published = src.data.get("publishedEntries", [])
+    # Fall back to editor entries if nothing published yet (backward compatible)
+    if not published:
+        published = src.data.get("editorEntries", [])
+    return [TimetableEntry.model_validate(item) for item in published]
+

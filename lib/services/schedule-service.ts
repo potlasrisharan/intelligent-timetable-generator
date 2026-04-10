@@ -49,5 +49,17 @@ export const scheduleService = {
       note: "Manually assigned block (Mock)",
     })
   },
-}
 
+  async publishTimetable(): Promise<{ status: string; entries_count: number; version: string; message: string }> {
+    return postJsonWithFallback("/schedule/publish", {}, {
+      status: "published",
+      entries_count: 0,
+      version: "Master Schedule",
+      message: "Published successfully.",
+    })
+  },
+
+  async getPublishedEntries(): Promise<TimetableEntry[]> {
+    return getJsonWithFallback<TimetableEntry[]>("/schedule/published-entries", editorEntries as TimetableEntry[])
+  },
+}
