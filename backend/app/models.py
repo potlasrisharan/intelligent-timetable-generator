@@ -332,6 +332,13 @@ class AutoRescheduleResponse(BaseModel):
     assistantNote: str | None = None
 
 
+class AutoRescheduleAllResponse(BaseModel):
+    ok: bool = True
+    resolvedCount: int
+    failedCount: int
+    message: str
+
+
 class AiChatMessage(BaseModel):
     role: ChatMessageRole
     content: str = Field(min_length=1, max_length=2000)

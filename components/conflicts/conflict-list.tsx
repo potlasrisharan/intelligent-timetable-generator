@@ -94,6 +94,39 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
 
   return (
     <div className="space-y-5">
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-[#f8fafc] font-semibold text-lg">{openConflicts.length} open conflicts</h2>
+        {openConflicts.length > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20 shadow-[0_0_15px_rgba(139,92,246,0.15)]"
+            onClick={async () => {
+              setAiResolving("all")
+              try {
+                const res = await aiService.autoRescheduleAll()
+                if (res.resolvedCount > 0) {
+                  toast.success(`Resolved ${res.resolvedCount} conflicts`, { description: res.message })
+                  // Update UI by marking the first N conflicts as resolved since we don't know IDs explicitly without reload
+                  // But let's just trigger a full reload since the backend state was updated
+                  window.location.reload()
+                } else {
+                  toast.info("No conflicts resolved", { description: "AI couldn't safely resolve any remaining conflicts." })
+                }
+              } catch {
+                toast.error("Auto-resolve all failed", { description: "Check network connection." })
+              } finally {
+                setAiResolving(null)
+              }
+            }}
+            disabled={aiResolving !== null}
+          >
+            <WandSparkles className="size-4 mr-2" />
+            {aiResolving === "all" ? "Resolving..." : "AI Auto-Resolve All"}
+          </Button>
+        )}
+      </div>
+
       {lastAiAction ? (
         <div className="rounded-[1.25rem] border border-emerald-400/18 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100">
           <WandSparkles className="mr-2 inline size-4" />

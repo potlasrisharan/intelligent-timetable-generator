@@ -733,6 +733,31 @@ def auto_reschedule_conflict(conflict_id: str) -> dict[str, Any]:
     return result
 
 
+def auto_reschedule_all_conflicts() -> dict[str, Any]:
+    conflicts = _safe_list("conflicts")
+    open_conflicts = [c for c in conflicts if c.get("status") != "resolved"]
+    
+    resolved = 0
+    failed = 0
+    
+    for c in open_conflicts:
+        try:
+            res = auto_reschedule_conflict(c["id"])
+            if res.get("applied"):
+                resolved += 1
+            else:
+                failed += 1
+        except Exception:
+            failed += 1
+            
+    return {
+        "ok": True,
+        "resolvedCount": resolved,
+        "failedCount": failed,
+        "message": f"Successfully resolved {resolved} conflicts. {failed} remaining."
+    }
+
+
 def _suggested_prompts(page: str | None) -> list[str]:
     if page == "conflicts":
         return [

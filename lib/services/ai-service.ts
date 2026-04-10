@@ -115,4 +115,18 @@ export const aiService = {
       { timeoutMs: AI_TIMEOUT_MS },
     )
   },
+
+  async autoRescheduleAll(): Promise<{ ok: boolean; resolvedCount: number; failedCount: number; message: string }> {
+    return postJsonWithFallback(
+      "/ai/auto-reschedule-all",
+      {},
+      {
+        ok: true,
+        resolvedCount: 0,
+        failedCount: 0,
+        message: "Fallback auto-reschedule all resolved 0 conflicts.",
+      },
+      { timeoutMs: 30000 }
+    )
+  },
 }

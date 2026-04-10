@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from ..ai_service import (
+    auto_reschedule_all_conflicts,
     auto_reschedule_conflict,
     build_conflict_prediction,
     build_quality_review,
@@ -12,6 +13,7 @@ from ..constraint_service import list_constraint_rules
 from ..models import (
     AiChatRequest,
     AiChatResponse,
+    AutoRescheduleAllResponse,
     AutoRescheduleResponse,
     ConflictPredictionResponse,
     ConstraintRule,
@@ -47,9 +49,15 @@ def post_chat_message(payload: AiChatRequest) -> AiChatResponse:
     )
 
 
+@router.post("/auto-reschedule-all", response_model=AutoRescheduleAllResponse)
+def post_auto_reschedule_all() -> AutoRescheduleAllResponse:
+    return AutoRescheduleAllResponse.model_validate(auto_reschedule_all_conflicts())
+
+
 @router.post("/auto-reschedule/{conflict_id}", response_model=AutoRescheduleResponse)
 def post_auto_reschedule(conflict_id: str) -> AutoRescheduleResponse:
     try:
         return AutoRescheduleResponse.model_validate(auto_reschedule_conflict(conflict_id))
     except KeyError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
