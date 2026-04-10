@@ -8,6 +8,12 @@
 - **Institution/Organization:** South Asian University
 - **Date of Submission:** April 2026
 
+![TimeTable X Logo](docs/assets/timetablex-logo.png)
+
+**Project Graphic.** TimeTable X identity graphic for the cover page.
+
+<div style="page-break-after: always;"></div>
+
 ## 2. Abstract
 
 TimeTable X is a web-based academic scheduling workspace developed for South Asian University to automate timetable generation, conflict review, schedule editing, reporting, and role-specific timetable access. The system addresses the operational difficulty of manually coordinating courses, faculty availability, rooms, sections, combined classes, holidays, and timetable constraints across multiple departments. The project combines a Next.js 15 and React 19 frontend with a FastAPI backend and a Google OR-Tools CP-SAT (Constraint Programming – Satisfiability) scheduling engine to generate optimal draft timetables. The platform includes resource configuration pages, interactive draft editing with manual class assignment, locked-slot preservation, explainable scheduling output (XAI), conflict resolution workflows, AI-powered CSV/manual data import with flexible header recognition, report generation, and PDF/CSV export. The AI assistant is powered by Groq (LLaMA 3.1 8B) and can not only advise on scheduling decisions but also execute real-time actions such as adding constraints, resolving conflicts, and triggering regeneration. A notable characteristic of the implementation is its resilience: when live backend or database services are unavailable, the application falls back to seeded in-memory data so that the system remains fully usable for demonstration and evaluation purposes.
@@ -63,6 +69,10 @@ flowchart LR
 
 **Figure 1.** High-level architecture derived from the project files.
 
+> [TO BE FILLED: Insert Figure 2 here — Admin Dashboard Screenshot.]
+> Suggested placement: immediately after the architecture diagram so the reader sees the real interface that sits on top of the backend and solver layers.
+> Suggested prompt if you want to generate a polished UI mock image: "Create a modern university timetable dashboard called TimeTable X with solver status, generation progress, quality score, conflict count, AI insight cards, and utilization charts; clean glassmorphism interface, dark slate background, white typography, red accent highlights, professional academic software UI."
+
 - **Description of components and their interactions:**
   - **Frontend Layer:** Built with Next.js 15, React 19, TypeScript 5, and Tailwind CSS 4. It renders the dashboard, configuration pages, draft editor with manual class assignment, conflicts page, reports page, history page, and teacher/student dashboards. Uses Radix UI primitives, Lucide React icons, and glassmorphism design language.
   - **Authentication Layer:** Clerk middleware and provider components handle sign-in. Role selection (`ADMIN`, `TEACHER`, `STUDENT`) is stored locally for demo flexibility.
@@ -107,6 +117,23 @@ The repository implements timetable generation as a configurable academic workfl
   7. **Conflict and explanation review:** Administrators inspect conflicts, suggested fixes, AI-assisted rescheduling, and XAI explanations for each placement.
   8. **AI Chat actions:** The AI copilot can execute real scheduling changes when asked, including adding constraints, resolving conflicts, and triggering regeneration. All actions are logged in the audit trail.
   9. **Export and publication:** Report summaries, version history, audit trail access, and PDF/CSV export for distribution.
+
+```mermaid
+flowchart TD
+    A["Sign in and choose role"] --> B["Configure or import academic resources"]
+    B --> C["Infer constraints from structured data and notes"]
+    C --> D["Run OR-Tools CP-SAT generation job"]
+    D --> E["Preserve locked slots and write draft entries"]
+    E --> F["Review conflicts, XAI explanations, and AI suggestions"]
+    F --> G["Apply manual fixes or AI-assisted actions"]
+    G --> H["Export PDF/CSV and publish final timetable"]
+```
+
+**Figure 2.** TimeTable X end-to-end scheduling workflow.
+
+> [TO BE FILLED: Insert Figure 3 here — Timetable Editor Screenshot.]
+> Suggested placement: directly below Figure 2 to show how the generated schedule is reviewed and manually adjusted.
+> Suggested prompt if you want to generate a polished UI mock image: "Create an academic timetable editor interface for TimeTable X showing a weekly grid, locked slots, section inspector panel, course cards, faculty names, room labels, and an explainable AI sidebar; modern web app design, glassmorphism, dark neutral palette with red and amber accents."
 
 - **Algorithms and models used**
   - **Solver:** Google OR-Tools CP-SAT constraint model with 45-second timeout.
@@ -157,6 +184,10 @@ The repository implements timetable generation as a configurable academic workfl
   - Exporting timetable outputs for faculty circulation and section-wise student access
 
 The project directly addresses several scheduling challenges: Room-capacity violations are surfaced through conflict records and constraint enforcement. Faculty overload is controlled through `maxPeriodsPerDay` rules and highlighted in AI quality review. Lab scheduling complexity is handled through dedicated `LAB` room matching and consecutive practical-slot logic. Data incompleteness is mitigated through CSV/manual import with flexible header recognition. Resilience challenges are reduced by allowing the system to function when external services are unavailable.
+
+> [TO BE FILLED: Insert Figure 4 here — Conflict Resolution and Reporting Screenshot.]
+> Suggested placement: at the end of this section, because it visually supports the use cases around conflict handling, AI-assisted fixes, and exports.
+> Suggested prompt if you want to generate a polished UI mock image: "Create a conflict management dashboard for a university timetable system showing severity badges, suggested fixes, AI auto-reschedule button, affected faculty and rooms, and export/report actions; premium SaaS interface, dark academic theme, red warning accents, clean typography."
 
 ## 11. Future Scope
 

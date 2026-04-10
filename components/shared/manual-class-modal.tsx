@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,7 +28,7 @@ export function ManualClassModal({ isOpen, onClose, day, timeslotId, sectionId, 
 
   const handleSubmit = async () => {
     if (!courseCode || !facultyName || !roomName) {
-        alert("Please fill necessary fields (Code, Faculty, Room)")
+        toast.warning("Missing fields", { description: "Please fill Course Code, Faculty, and Room." })
         return
     }
     
@@ -52,16 +53,17 @@ export function ManualClassModal({ isOpen, onClose, day, timeslotId, sectionId, 
         setFacultyName("")
         setRoomName("")
         setType("THEORY")
+        toast.success("Class assigned", { description: `${courseCode} placed on ${day} ${timeslotId.toUpperCase()} in ${roomName}` })
         onSuccess()
         onClose()
       } else {
-        alert("Entry was saved locally. Refresh the page to see it.")
+        toast.info("Saved locally", { description: "Entry stored. Refresh to see it on the grid." })
         onSuccess()
         onClose()
       }
     } catch (err) {
       console.error("Manual entry failed:", err)
-      alert("Failed to assign class. Please check your connection and try again.")
+      toast.error("Assignment failed", { description: "Check your connection and try again." })
     } finally {
       setIsSubmitting(false)
     }

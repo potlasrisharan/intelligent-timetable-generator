@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Download, FileText, FileSpreadsheet, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -17,7 +18,7 @@ export function ExportTimetableButton() {
       const contentType = res.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
         const data = await res.json()
-        alert(data.message || `Exported to ${type.toUpperCase()} successfully.`)
+        toast.success("Export ready", { description: data.message || `Exported to ${type.toUpperCase()} successfully.` })
         return
       }
 
@@ -30,8 +31,9 @@ export function ExportTimetableButton() {
       a.click()
       a.remove()
       window.URL.revokeObjectURL(url)
+      toast.success(`${type.toUpperCase()} exported`, { description: "File downloaded successfully." })
     } catch {
-      alert(`Network error exporting ${type.toUpperCase()}`)
+      toast.error("Export failed", { description: `Network error exporting ${type.toUpperCase()}. Check your connection.` })
     } finally {
       setIsExporting(false)
     }

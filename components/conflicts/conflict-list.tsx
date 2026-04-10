@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { WandSparkles } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,8 +27,9 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
           c.id === conflictId ? { ...c, status: "resolved" } : c
         )
       )
+      toast.success("Conflict resolved", { description: `Applied fix: ${fix}` })
     } catch {
-      alert("Failed to resolve conflict. Check network.")
+      toast.error("Resolution failed", { description: "Could not apply fix. Check your network connection." })
     } finally {
       setResolving(null)
     }
@@ -45,6 +47,9 @@ export function ConflictList({ initialConflicts }: { initialConflicts: Conflict[
             conflict.id === conflictId ? { ...conflict, status: "resolved" } : conflict,
           ),
         )
+        toast.success("AI resolved conflict", { description: result.summary })
+      } else {
+        toast.info("AI analysis complete", { description: result.summary })
       }
     } catch {
       setAiResults((current) => ({

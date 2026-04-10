@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { AlertTriangle, BrainCircuit, Loader2, ShieldCheck, Sparkles } from "lucide-react"
 import { AssistantPanel } from "@/components/ai/assistant-panel"
 import { StatusBadge } from "@/components/shared/status-badge"
@@ -23,6 +24,7 @@ export function DashboardAiPanels() {
     setQuality(qualityResult)
     setPrediction(predictionResult)
     setLoading(false)
+    toast.info("AI insights updated", { description: `Quality score: ${qualityResult.score}/100` })
   }
 
   useEffect(() => {

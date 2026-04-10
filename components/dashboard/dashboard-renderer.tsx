@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
+import { toast } from "sonner"
 import {
   BookOpen, Calendar, Clock,
   Cpu, GitBranch, Upload, WandSparkles, Zap,
@@ -245,6 +246,12 @@ export function DashboardRenderer({
   useEffect(() => {
     if (jobStatus === "done" && solverResult?.status === "success") {
       scheduleService.getEditorEntries().then(setTimetableEntries)
+      toast.success("Timetable generated", {
+        description: `${solverResult.entries_generated} slots filled in ${solverResult.elapsed_ms}ms — Quality: ${solverResult.quality_score}`,
+      })
+    }
+    if (jobStatus === "error" || (jobStatus === "done" && solverResult?.status === "error")) {
+      toast.error("Generation failed", { description: solverResult?.message || "The solver could not find a valid schedule." })
     }
   }, [jobStatus, solverResult?.status])
 
@@ -437,12 +444,13 @@ export function DashboardRenderer({
         setUploadSummary(summary)
         setPoolItems((prev) => [...prev, `[CSV] ${file.name} synced · ${summary.importedCount} rows · ${summary.constraintsApplied} AI rules`])
         aiService.getConstraintRules().then(setConstraintRules)
+        toast.success("CSV imported", { description: `${summary.importedCount} rows imported with ${summary.constraintsApplied} AI constraints.` })
       } else {
         const errorMessage = "detail" in data ? data.detail : undefined
-        alert(`Error: ${errorMessage || "Failed to upload"}`)
+        toast.error("Upload failed", { description: errorMessage || "Could not process the CSV file." })
       }
     } catch {
-      alert("Network Error uploading CSV")
+      toast.error("Network error", { description: "Could not upload CSV. Check your connection." })
     } finally {
       setIsUploading(false)
       e.target.value = ""
@@ -471,13 +479,14 @@ export function DashboardRenderer({
       const data = await res.json()
       if (res.ok) {
         setPoolItems((prev) => [...prev, data.message])
+        toast.success("Entry added", { description: data.message })
         setRoomName(""); setCapacity(""); setTargetBranch(""); setSectionName(""); setStudentCount("")
         setCourseCode(""); setCourseName(""); setTheoryHours(""); setFacultyName("")
       } else {
-        alert(`Error: ${data.detail || "Failed"}`)
+        toast.error("Entry failed", { description: data.detail || "Could not add entry." })
       }
     } catch {
-      alert("Network Error submitting config")
+      toast.error("Network error", { description: "Could not submit configuration." })
     }
   }
 
@@ -498,7 +507,7 @@ export function DashboardRenderer({
             <Button
               variant="outline"
               className="rounded-2xl border-white/8 bg-white/5 text-slate-100"
-              onClick={() => alert("Published to all users!")}
+              onClick={() => toast.success("Schedule published!", { description: "The master schedule is now visible to all teachers and students." })}
             >
               <GitBranch className="size-4" />
               Publish Master Schedule
