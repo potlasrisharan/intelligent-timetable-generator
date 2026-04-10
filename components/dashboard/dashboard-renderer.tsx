@@ -213,13 +213,14 @@ export function DashboardRenderer({
   const [uploadSummary, setUploadSummary] = useState<CsvImportResult | null>(null)
   const [constraintRules, setConstraintRules] = useState<ConstraintRule[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [liveQualityScore, setLiveQualityScore] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { jobStatus, progress, result, startGenerate } = useGenerateJob()
   const isGenerating = jobStatus === "queued" || jobStatus === "running"
 
   const solverResult = asSolverResult(result)
-  const qScore = solverResult?.quality_score ?? metrics.activeVersion.qualityScore
+  const qScore = solverResult?.quality_score ?? liveQualityScore ?? metrics.activeVersion.qualityScore
 
   // Read session once on mount
   useEffect(() => {
@@ -240,6 +241,13 @@ export function DashboardRenderer({
 
   useEffect(() => {
     aiService.getConstraintRules().then(setConstraintRules)
+  }, [])
+
+  // Fetch live AI quality score on mount
+  useEffect(() => {
+    aiService.getQualityReview().then((review) => {
+      setLiveQualityScore(review.score)
+    })
   }, [])
 
   // Refresh entries after a successful generate (Admin only)
@@ -534,7 +542,7 @@ export function DashboardRenderer({
             {
               label: "Quality Score",
               value: `${qScore}`,
-              sub: isSuccess ? "Current generation" : "Spring 2026 Active",
+              sub: isSuccess ? "Current generation" : "Live AI assessment",
               icon: BarChart3,
               tone: "text-emerald-300",
               border: "border-emerald-500/20 bg-emerald-500/8",
